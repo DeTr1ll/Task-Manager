@@ -1,0 +1,21 @@
+{% extends 'tasks/base.html' %}
+
+{% block title %}Мої задачі{% endblock %}
+
+{% block content %}
+    <h2>Мої задачі</h2>
+
+    {% if tasks %}
+        <ul class="list-group">
+            {% for task in tasks %}
+                <li class="list-group-item">
+                    <strong>{{ task.title }}</strong><br>
+                    Статус: {{ task.status }}<br>
+                    Дата: {{ task.created_at }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+  <p>Задачі відсутні. Нумо створимо нову!</p>
+{% endif %}
+{% endblock %}
