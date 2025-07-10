@@ -5,10 +5,10 @@ class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=50, choices=[
-            ('pending', 'Pending'), 
-            ('in_progress', 'In Progress'), 
-            ('completed', 'Completed')
+            ('pending', 'В очікуванні'), 
+            ('in_progress', 'Виконується'), 
+            ('completed', 'Виконано')
         ])
-    due_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

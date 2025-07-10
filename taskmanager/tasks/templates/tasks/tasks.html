@@ -1,21 +1,76 @@
 {% extends 'tasks/base.html' %}
-
+{% load static %}
 {% block title %}Мої задачі{% endblock %}
 
 {% block content %}
-    <h2>Мої задачі</h2>
+<div class="container py-4">
+    <h2 class="mb-4 text-center">📋 Мої задачі</h2>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'task_create' %}" class="btn btn-primary">➕ Нова задача</a>
+        {% if messages %}
+            <div class="ms-3">
+                {% for message in messages %}
+                    <div class="alert alert-info mb-0 py-2 px-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
     {% if tasks %}
         <ul class="list-group">
             {% for task in tasks %}
-                <li class="list-group-item">
-                    <strong>{{ task.title }}</strong><br>
-                    Статус: {{ task.status }}<br>
-                    Дата: {{ task.created_at }}
+                <li class="list-group-item mb-3 shadow-sm rounded" id="task-{{ task.id }}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-1">{{ task.title }}</h5>
+                            <small class="status-display text-muted d-block mb-2">
+                                Статус: {{ task.get_status_display }}
+                            </small>
+
+                            <div class="btn-group status-btns mb-2" data-task-id="{{ task.id }}">
+                                <button type="button"
+                                        class="btn btn-sm {% if task.status == 'pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                                        data-status="pending"
+                                        title="Очікує">⏳</button>
+
+                                <button type="button"
+                                        class="btn btn-sm {% if task.status == 'in_progress' %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                                        data-status="in_progress"
+                                        title="Виконується">🔧</button>
+
+                                <button type="button"
+                                        class="btn btn-sm {% if task.status == 'completed' %}btn-success{% else %}btn-outline-success{% endif %}"
+                                        data-status="completed"
+                                        title="Виконано">✅</button>
+                            </div>
+
+                            <div class="text-muted mb-2">
+                                📅 {{ task.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{% url 'task_edit' task.id %}" class="btn btn-outline-warning btn-sm mb-2">✏️ Редагувати</a><br>
+                            <a href="{% url 'task_delete' task.id %}" class="btn btn-outline-danger btn-sm">🗑️ Видалити</a>
+                        </div>
+                    </div>
                 </li>
             {% endfor %}
         </ul>
     {% else %}
-  <p>Задачі відсутні. Нумо створимо нову!</p>
-{% endif %}
+        <div class="alert alert-light text-center" role="alert">
+            🙁 Задачі відсутні.
+        </div>
+        <div class="text-center">
+            <a href="{% url 'task_create' %}" class="btn btn-primary">Створити першу задачу</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'tasks/status_update.js' %}"></script>
 {% endblock %}

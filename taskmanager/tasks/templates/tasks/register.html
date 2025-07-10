@@ -1,39 +1,61 @@
 {% extends 'tasks/base.html' %}
 
+{% load form_filters %}
+
 {% block title %}Реєстрація{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h2>Реєстрація</h2>
-        <form method="post" class="mt-3">
-          {% csrf_token %}
-          {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {{ form.non_field_errors }}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title mb-4 text-center">🔐 Реєстрація</h3>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">👤 Логін</label>
+                            {{ form.username|add_class:"form-control" }}
+                            {% for error in form.username.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label">🔒 Пароль</label>
+                            {{ form.password1|add_class:"form-control" }}
+                            {% for error in form.password1.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label">🔒 Повтор паролю</label>
+                            {{ form.password2|add_class:"form-control" }}
+                            {% for error in form.password2.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Зареєструватись</button>
+                        </div>
+                    </form>
+
+                    <div class="mt-3 text-center">
+                        Вже маєте обліковий запис? <a href="{% url 'login' %}">Увійти</a>
+                    </div>
+                </div>
             </div>
-          {% endif %}
-          <div class="mb-3">
-            <label for="id_username">Логін</label>
-            {{ form.username }}
-            {% for error in form.username.errors %}
-                <div class="text-danger">{{ error }}</div>
-            {% endfor %}
-          </div>
-          <div class="mb-3">
-            <label for="id_password">Пароль</label>
-            {{ form.password1 }}
-            {% for error in form.password1.errors %}
-                <div class="text-danger">{{ error }}</div>
-            {% endfor %}
-          </div>
-          <div class="mb-3">
-            <label for="id_password">Повтор паролю</label>
-            {{ form.password2 }}
-            {% for error in form.password2.errors %}
-                <div class="text-danger">{{ error }}</div>
-            {% endfor %}
-          </div>
-          <button type="submit" class="btn btn-primary">Зареєструватись</button>
-        </form>
+        </div>
     </div>
+</div>
 {% endblock %}

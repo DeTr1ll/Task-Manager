@@ -1,22 +1,54 @@
 {% extends 'tasks/base.html' %}
+{% load form_filters %}
 
 {% block title %}Увійти{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h2>Вхід в систему</h2>
-        <form method="post" class="mt-3">
-          {% csrf_token %}
-          {{ form.non_field_errors }}
-          <div class="mb-3">
-            <label for="id_username">Логін</label>
-            {{ form.username }}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h3 class="card-title mb-4 text-center">🔐 Вхід в систему</h3>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="mb-3">
+              <label for="id_username" class="form-label">👤 Логін</label>
+              {{ form.username|add_class:"form-control" }}
+              {% for error in form.username.errors %}
+                <div class="text-danger">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="mb-3">
+              <label for="id_password" class="form-label">🔒 Пароль</label>
+              {{ form.password|add_class:"form-control" }}
+              {% for error in form.password.errors %}
+                <div class="text-danger">{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Увійти</button>
+            </div>
+          </form>
+
+          <div class="mt-3 text-center">
+            Ще не маєте акаунту? <a href="{% url 'register' %}">Зареєструватись</a>
           </div>
-          <div class="mb-3">
-            <label for="id_password">Пароль</label>
-            {{ form.password }}
-          </div>
-          <button type="submit" class="btn btn-primary">Увійти</button>
-        </form>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
 {% endblock %}

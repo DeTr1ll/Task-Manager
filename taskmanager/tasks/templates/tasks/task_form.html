@@ -1,0 +1,33 @@
+{% extends 'tasks/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if is_edit %}Редагувати задачу{% else %}Створити задачу{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4 text-center">
+        {% if is_edit %}✏️ Редагувати задачу{% else %}🆕 Створити нову задачу{% endif %}
+    </h2>
+
+    <form method="post" class="mx-auto" style="max-width: 600px;">
+        {% csrf_token %}
+
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>⚠️ Помилка:</strong> Будь ласка, виправте помилки нижче.
+            </div>
+        {% endif %}
+
+        {{ form.as_p }}
+
+        <div class="d-flex justify-content-between mt-4">
+            <button type="submit" class="btn btn-success">
+                {% if is_edit %}💾 Зберегти зміни{% else %}✅ Створити задачу{% endif %}
+            </button>
+            <a href="{% url 'task_list' %}" class="btn btn-danger">🔙 Скасувати</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
