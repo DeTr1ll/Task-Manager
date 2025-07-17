@@ -8,7 +8,8 @@ class Task(models.Model):
             ('pending', 'В очікуванні'), 
             ('in_progress', 'Виконується'), 
             ('completed', 'Виконано')
-        ])
+        ], default='pending')
+        
     due_date = models.DateField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

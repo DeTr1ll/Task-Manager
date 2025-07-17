@@ -7,6 +7,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import TaskForm
 from .models import Task
+from django.contrib import messages
+
 
 def register(request):
     if request.method == 'POST':
@@ -21,8 +23,24 @@ def register(request):
 
 @login_required
 def task_list(request):
-    tasks = Task.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'tasks/tasks.html', {'tasks': tasks})
+    tasks = Task.objects.filter(user=request.user)
+
+    status_filter = request.GET.get('status')
+    query = request.GET.get('q')
+
+    if status_filter:
+        tasks = tasks.filter(status=status_filter)
+
+    if query:
+        tasks = tasks.filter(title__icontains=query)
+
+    tasks = tasks.order_by('-created_at')
+
+    return render(request, 'tasks/tasks.html', {
+        'tasks': tasks,
+        'status_filter': status_filter,
+        'query': query,
+    })
 
 @login_required
 def task_create(request):
@@ -32,6 +50,7 @@ def task_create(request):
             task = form.save(commit=False)
             task.user = request.user
             task.save()
+            messages.success(request, '✅ Задачу успішно створено.')
             return redirect('task_list')
     else:
         form = TaskForm()
@@ -45,6 +64,7 @@ def task_edit(request, id):
         form = TaskForm(request.POST, instance=task)
         if form.is_valid():
             task = form.save()
+            messages.info(request, '✏️ Задачу оновлено.')
             return redirect('task_list')
     else:
         form = TaskForm(instance=task)
@@ -69,4 +89,5 @@ def task_update_status_ajax(request, id):
 def task_delete(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
     task.delete()
+    messages.warning(request, '🗑️ Задачу видалено.')
     return redirect('task_list')

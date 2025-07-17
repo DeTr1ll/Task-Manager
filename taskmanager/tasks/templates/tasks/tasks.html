@@ -8,15 +8,22 @@
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <a href="{% url 'task_create' %}" class="btn btn-primary">➕ Нова задача</a>
-        {% if messages %}
-            <div class="ms-3">
-                {% for message in messages %}
-                    <div class="alert alert-info mb-0 py-2 px-3" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+        <form method="get" class="row mb-4 g-2">
+            <div class="col-md-4">
+              <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="🔍 Пошук по назві">
             </div>
-        {% endif %}
+            <div class="col-md-4">
+              <select name="status" class="form-select">
+                <option value="">Всі статуси</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>⏳ Очікує</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>🔧 Виконується</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>✅ Виконано</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-grid">
+              <button type="submit" class="btn btn-primary">🔎 Застосувати</button>
+            </div>
+        </form>
     </div>
 
     {% if tasks %}
