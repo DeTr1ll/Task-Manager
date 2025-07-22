@@ -1,15 +1,28 @@
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.shortcuts import render
+from datetime import timedelta
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import TaskForm
+from django.db.models import Q
 from django.http import JsonResponse
-from .models import Task, Tag
-from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from rest_framework import viewsets, permissions
 
+from .forms import TaskForm
+from .models import Task, Tag
+from .serializers import TaskSerializer
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 def register(request):
     if request.method == 'POST':
@@ -25,6 +38,7 @@ def register(request):
 @login_required
 def task_list(request):
     tasks = Task.objects.filter(user=request.user)
+    today = timezone.localdate()
 
     status_filter = request.GET.get('status')
     query = request.GET.get('q')
@@ -33,9 +47,22 @@ def task_list(request):
         tasks = tasks.filter(status=status_filter)
 
     if query:
-        tasks = tasks.filter(title__icontains=query)
-
+        tasks = tasks.filter(
+            Q(title__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()
     tasks = tasks.order_by('-created_at')
+
+    for task in tasks:
+        if task.due_date and task.status != 'completed':
+            if task.due_date < today:
+                task.highlight = 'danger'
+            elif task.due_date <= today + timedelta(days=2):
+                task.highlight = 'warning'
+            else:
+                task.highlight = ''
+        else:
+            task.highlight = 'success'
 
     return render(request, 'tasks/tasks.html', {
         'tasks': tasks,

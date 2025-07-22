@@ -29,7 +29,10 @@
     {% if tasks %}
         <ul class="list-group">
             {% for task in tasks %}
-                <li class="list-group-item mb-3 shadow-sm rounded" id="task-{{ task.id }}">
+                <li class="list-group-item mb-3 shadow-sm rounded
+                    {% if task.highlight %}list-group-item-{{ task.highlight }}{% endif %}"
+                    id="task-{{ task.id }}">
+                
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="mb-1">{{ task.title }}</h5>
@@ -53,10 +56,11 @@
                                         data-status="completed"
                                         title="Виконано">✅</button>
                             </div>
-
+                            {% if task.due_date %}
                             <div class="text-muted mb-2">
-                                📅 {{ task.created_at|date:"d.m.Y H:i" }}
+                                📅 Виконати до: {{ task.due_date|date:"d.m.Y" }}
                             </div>
+                            {% endif %}
                             {% if task.tags.all %}
                                 <div class="mt-1">
                                     {% for tag in task.tags.all %}
@@ -67,8 +71,8 @@
                         </div>
 
                         <div class="text-end">
-                            <a href="{% url 'task_edit' task.id %}" class="btn btn-outline-warning btn-sm mb-2">✏️ Редагувати</a><br>
-                            <a href="{% url 'task_delete' task.id %}" class="btn btn-outline-danger btn-sm">🗑️ Видалити</a>
+                            <a href="{% url 'task_edit' task.id %}" class="btn btn-warning btn-sm mb-2"><i class="bi bi-pencil-fill"></i> Редагувати</a><br>
+                            <a href="{% url 'task_delete' task.id %}" class="btn btn-danger btn-sm mb-2"><i class="bi bi-trash-fill"></i> Видалити</a>
                         </div>
                     </div>
                 </li>
