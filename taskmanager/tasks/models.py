@@ -13,3 +13,11 @@ class Task(models.Model):
     due_date = models.DateField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class Tag(models.Model):
+    name = models.CharField(max_length=50)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tasks = models.ManyToManyField('Task', related_name='tags')
+    
+    def __str__(self):
+        return self.name

@@ -57,6 +57,13 @@
                             <div class="text-muted mb-2">
                                 📅 {{ task.created_at|date:"d.m.Y H:i" }}
                             </div>
+                            {% if task.tags.all %}
+                                <div class="mt-1">
+                                    {% for tag in task.tags.all %}
+                                        <span class="badge bg-info text-dark">{{ tag.name }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="text-end">

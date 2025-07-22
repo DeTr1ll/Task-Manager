@@ -6,7 +6,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import TaskForm
-from .models import Task
+from django.http import JsonResponse
+from .models import Task, Tag
 from django.contrib import messages
 
 
@@ -45,30 +46,44 @@ def task_list(request):
 @login_required
 def task_create(request):
     if request.method == 'POST':
-        form = TaskForm(request.POST)
+        form = TaskForm(request.POST, user=request.user) 
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
+            tags = handle_tags_input(form.cleaned_data.get('tags_input', ''), request.user)
             task.save()
+            task.tags.set(tags)
+            form.save_m2m()
             messages.success(request, '✅ Задачу успішно створено.')
             return redirect('task_list')
     else:
-        form = TaskForm()
-    
-    return render(request, 'tasks/task_form.html', {'form': form, 'is_edit': False})
+        form = TaskForm(user=request.user)
+
+    return render(request, 'tasks/task_form.html', {
+        'form': form,
+        'is_edit': False
+    })
 
 @login_required
 def task_edit(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
+
     if request.method == 'POST':
-        form = TaskForm(request.POST, instance=task)
+        form = TaskForm(request.POST, instance=task, user=request.user)
         if form.is_valid():
-            task = form.save()
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
+
+            tags_input = form.cleaned_data.get('tags_input', '')
+            tags = handle_tags_input(tags_input, request.user)
+            task.tags.set(tags)
+
             messages.info(request, '✏️ Задачу оновлено.')
             return redirect('task_list')
     else:
-        form = TaskForm(instance=task)
-    
+        form = TaskForm(instance=task, user=request.user)
+
     return render(request, 'tasks/task_form.html', {'form': form, 'is_edit': True})
 
 @login_required
@@ -91,3 +106,22 @@ def task_delete(request, id):
     task.delete()
     messages.warning(request, '🗑️ Задачу видалено.')
     return redirect('task_list')
+
+def handle_tags_input(tags_str, user):
+    tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
+    tags = []
+    for name in tag_names:
+        tag, created = Tag.objects.get_or_create(name=name, user=user)
+        tags.append(tag)
+    return tags
+
+@login_required
+def tag_autocomplete(request):
+    term = request.GET.get('term', '')
+    user = request.user if request.user.is_authenticated else None
+    tags = []
+
+    if term and user:
+        tags = Tag.objects.filter(name__icontains=term, user=user).values_list('name', flat=True).distinct()
+
+    return JsonResponse(list(tags), safe=False)

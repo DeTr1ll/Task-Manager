@@ -12,22 +12,41 @@
     </h2>
 
     <form method="post" class="mx-auto" style="max-width: 600px;">
-        {% csrf_token %}
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <strong>⚠️ Помилка:</strong> Будь ласка, виправте помилки нижче.
+      </div>
+    {% endif %}
+    
+    {{ form.title.label_tag }}
+    {{ form.title }}
 
-        {% if form.errors %}
-            <div class="alert alert-danger">
-                <strong>⚠️ Помилка:</strong> Будь ласка, виправте помилки нижче.
-            </div>
-        {% endif %}
+    {{ form.description.label_tag }}
+    {{ form.description }}
 
-        {{ form.as_p }}
+    {{ form.status.label_tag }}
+    {{ form.status }}
 
-        <div class="d-flex justify-content-between mt-4">
-            <button type="submit" class="btn btn-success">
-                {% if is_edit %}💾 Зберегти зміни{% else %}✅ Створити задачу{% endif %}
-            </button>
-            <a href="{% url 'task_list' %}" class="btn btn-danger">🔙 Скасувати</a>
+    {{ form.due_date.label_tag }}
+    {{ form.due_date }}
+
+    <div class="mb-3 position-relative" style="max-width: 600px;">
+        {{ form.tags_input.label_tag }}
+        {{ form.tags_input }}
+        <div id="tag-suggestions"
+             class="list-group position-absolute w-100 shadow-sm"
+             style="top: 100%; left: 0; z-index: 1050; max-height: 200px; overflow-y: auto;">
         </div>
-    </form>
+    </div>
+        <button type="submit" class="btn btn-success">
+            {% if is_edit %}💾 Зберегти зміни{% else %}✅ Створити задачу{% endif %}
+        </button>
+        <a href="{% url 'task_list' %}" class="btn btn-danger">🔙 Скасувати</a>
+    </div>
+</form>
 </div>
+{% endblock %}
+{% block scripts %}
+    <script src="{% static 'tasks/tags_autocomplete.js' %}"></script>
 {% endblock %}

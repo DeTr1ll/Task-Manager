@@ -1,7 +1,17 @@
 from django import forms
-from .models import Task
+from .models import Task, Tag
 
 class TaskForm(forms.ModelForm):
+    tags_input = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'id': 'tags-input',
+            'class': 'form-control',
+            'placeholder': 'напр. робота, терміново',
+            'autocomplete': 'off',
+        }),
+        label="Мітки",
+    )
     class Meta:
         model = Task
         fields = ['title', 'description', 'status', 'due_date']
@@ -20,3 +30,8 @@ class TaskForm(forms.ModelForm):
                 'type': 'date'
             }),
         }
+    def __init__(self, *args, **kwargs):
+           self.user = kwargs.pop('user', None)
+           super().__init__(*args, **kwargs)
+           if self.instance.pk:
+               self.fields['tags_input'].initial = ', '.join(tag.name for tag in self.instance.tags.all())
