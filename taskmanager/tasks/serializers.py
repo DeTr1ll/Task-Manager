@@ -32,3 +32,4 @@ class TaskSerializer(serializers.ModelSerializer):
                 task.tags.add(tag)
 
         return task
+    

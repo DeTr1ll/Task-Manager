@@ -4,24 +4,24 @@
 
 {% block content %}
 <div class="container py-4">
-    <h2 class="mb-4 text-center">📋 Мої задачі</h2>
+    <h2 class="mb-4 text-center"><i class="bi bi-stickies-fill"></i> Мої задачі</h2>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'task_create' %}" class="btn btn-primary">➕ Нова задача</a>
+        <a href="{% url 'task_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Нова задача</a>
         <form method="get" class="row mb-4 g-2">
             <div class="col-md-4">
-              <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="🔍 Пошук по назві">
+              <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="Пошук по назві">
             </div>
             <div class="col-md-4">
               <select name="status" class="form-select">
                 <option value="">Всі статуси</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>⏳ Очікує</option>
-                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>🔧 Виконується</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>✅ Виконано</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}></i> Очікує</option>
+                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}></i> Виконується</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}></i> Виконано</option>
               </select>
             </div>
             <div class="col-md-4 d-grid">
-              <button type="submit" class="btn btn-primary">🔎 Застосувати</button>
+              <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Застосувати</button>
             </div>
         </form>
     </div>
@@ -29,66 +29,111 @@
     {% if tasks %}
         <ul class="list-group">
             {% for task in tasks %}
-                <li class="list-group-item mb-3 shadow-sm rounded
-                    {% if task.highlight %}list-group-item-{{ task.highlight }}{% endif %}"
-                    id="task-{{ task.id }}">
-                
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="mb-1">{{ task.title }}</h5>
-                            <small class="status-display text-muted d-block mb-2">
-                                Статус: {{ task.get_status_display }}
-                            </small>
+              <li class="list-group-item mb-3 shadow rounded
+                {{ task.card_highlight }}"
+                id="task-{{ task.id }}"
+                data-due-date="{{ task.due_date|date:'Y-m-d' }}"
+                data-has-description="{% if task.description %}true{% else %}false{% endif %}"
+                style="cursor: pointer;"
+              >
+                <div class="d-flex justify-content-between flex-wrap">
+                  <!-- Левая часть: инфо -->
+                  <div class="flex-grow-1 me-3">
 
-                            <div class="btn-group status-btns mb-2" data-task-id="{{ task.id }}">
-                                <button type="button"
-                                        class="btn btn-sm {% if task.status == 'pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
-                                        data-status="pending"
-                                        title="Очікує">⏳</button>
-
-                                <button type="button"
-                                        class="btn btn-sm {% if task.status == 'in_progress' %}btn-warning{% else %}btn-outline-warning{% endif %}"
-                                        data-status="in_progress"
-                                        title="Виконується">🔧</button>
-
-                                <button type="button"
-                                        class="btn btn-sm {% if task.status == 'completed' %}btn-success{% else %}btn-outline-success{% endif %}"
-                                        data-status="completed"
-                                        title="Виконано">✅</button>
-                            </div>
-                            {% if task.due_date %}
-                            <div class="text-muted mb-2">
-                                📅 Виконати до: {{ task.due_date|date:"d.m.Y" }}
-                            </div>
-                            {% endif %}
-                            {% if task.tags.all %}
-                                <div class="mt-1">
-                                    {% for tag in task.tags.all %}
-                                        <span class="badge bg-info text-dark">{{ tag.name }}</span>
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                    <!-- Заголовок + Дата дедлайна -->
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h5 class="mb-1">
+                        <i class="bi bi-sticky-fill text-primary me-1"></i>{{ task.title }}
+                      </h5>
+                      {% if task.due_date %}
+                        <div class="due-date-display {{ task.due_highlight }} mb-2">
+                          <i class="bi bi-calendar-event me-1"></i>Виконати до: {{ task.due_date|date:"d.m.Y" }}
                         </div>
-
-                        <div class="text-end">
-                            <a href="{% url 'task_edit' task.id %}" class="btn btn-warning btn-sm mb-2"><i class="bi bi-pencil-fill"></i> Редагувати</a><br>
-                            <a href="{% url 'task_delete' task.id %}" class="btn btn-danger btn-sm mb-2"><i class="bi bi-trash-fill"></i> Видалити</a>
-                        </div>
+                      {% endif %}
                     </div>
-                </li>
+                
+                    <!-- Статус -->
+                    <div class="mb-2">
+                      <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>Статус: <strong class="status-display">{{ task.get_status_display }}</strong>
+                      </small>
+                    </div>
+                
+                    <!-- Кнопки изменения статуса -->
+                    <div class="btn-group status-btns mb-2" data-task-id="{{ task.id }}">
+                      <button type="button"
+                              class="btn btn-sm {% if task.status == 'pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                              data-status="pending"
+                              title="Очікує">
+                        <i class="bi bi-hourglass-split"></i>
+                      </button>
+                      <button type="button"
+                              class="btn btn-sm {% if task.status == 'in_progress' %}btn-warning{% else %}btn-outline-warning{% endif %}"
+                              data-status="in_progress"
+                              title="Виконується">
+                        <i class="bi bi-clock-fill"></i>
+                      </button>
+                      <button type="button"
+                              class="btn btn-sm {% if task.status == 'completed' %}btn-success{% else %}btn-outline-success{% endif %}"
+                              data-status="completed"
+                              title="Виконано">
+                        <i class="bi bi-check-circle-fill"></i>
+                      </button>
+                    </div>
+                
+                    <!-- Метки -->
+                    {% if task.tags.all %}
+                      <div class="mt-1">
+                        {% for tag in task.tags.all %}
+                          <span class="badge bg-info text-dark me-1">
+                            <i class="bi bi-tag-fill me-1"></i>{{ tag.name }}
+                          </span>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+              
+                  <!-- Правая часть: действия -->
+                  <div class="text-end mt-2 mt-md-0">
+                    <a href="{% url 'task_edit' task.id %}" class="btn btn-sm btn-warning mb-2 w-100">
+                      <i class="bi bi-pencil-fill me-1"></i> Редагувати
+                    </a>
+                    <a href="{% url 'task_delete' task.id %}" class="btn btn-sm btn-danger w-100">
+                      <i class="bi bi-trash-fill me-1"></i> Видалити
+                    </a>
+                  </div>
+
+                </div>
+                {% if task.description %}
+                    <div class="task-description mt-2 collapse-description">
+                        <hr>
+                        <p class="mb-0">Опис: {{ task.description }}</p>
+                    </div>
+                {% endif %}
+              </li>
             {% endfor %}
         </ul>
     {% else %}
         <div class="alert alert-light text-center" role="alert">
-            🙁 Задачі відсутні.
-        </div>
-        <div class="text-center">
-            <a href="{% url 'task_create' %}" class="btn btn-primary">Створити першу задачу</a>
+            <i class="bi bi-emoji-frown"></i> Задачі відсутні.
         </div>
     {% endif %}
 </div>
+
+<style>
+  .collapse-description {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+
+  .collapse-description.expanded {
+    max-height: 300px; /* можно больше, если описания большие */
+  }
+</style>
 {% endblock %}
 
 {% block scripts %}
     <script src="{% static 'tasks/status_update.js' %}"></script>
+    <script src="{% static 'tasks/tasks_description_animation.js' %}"></script>
 {% endblock %}

@@ -9,7 +9,7 @@
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-body">
-          <h3 class="card-title mb-4 text-center">🔐 Вхід в систему</h3>
+          <h3 class="card-title mb-4 text-center"><i class="bi bi-door-open-fill"></i> Вхід в систему</h3>
 
           <form method="post" novalidate>
             {% csrf_token %}
@@ -23,7 +23,7 @@
             {% endif %}
 
             <div class="mb-3">
-              <label for="id_username" class="form-label">👤 Логін</label>
+              <label for="id_username" class="form-label"><i class="bi bi-person-fill"></i> Логін</label>
               {{ form.username|add_class:"form-control" }}
               {% for error in form.username.errors %}
                 <div class="text-danger">{{ error }}</div>
@@ -31,7 +31,7 @@
             </div>
 
             <div class="mb-3">
-              <label for="id_password" class="form-label">🔒 Пароль</label>
+              <label for="id_password" class="form-label"><i class="bi bi-lock-fill"></i> Пароль</label>
               {{ form.password|add_class:"form-control" }}
               {% for error in form.password.errors %}
                 <div class="text-danger">{{ error }}</div>

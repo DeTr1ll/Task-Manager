@@ -26,10 +26,10 @@ class TaskForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'due_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
+            'due_date': forms.DateInput(
+                attrs={'class': 'form-control', 'type': 'date'},
+                format='%Y-%m-%d'
+            ),
         }
     def __init__(self, *args, **kwargs):
            self.user = kwargs.pop('user', None)

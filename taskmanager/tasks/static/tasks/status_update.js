@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Обновляем текст статуса
             const statusText = document.querySelector(`#task-${taskId} .status-display`);
             if (statusText) {
-              statusText.textContent = `Статус: ${data.new_status_display}`;
+              statusText.textContent = `${data.new_status_display}`;
             }
 
             // Обновляем подсветку кнопок
@@ -45,6 +45,40 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (btnStatus === 'completed') btn.classList.add('btn-outline-success');
               }
             });
+            const taskElement = document.getElementById(`task-${taskId}`);
+            const dueDateStr = taskElement.getAttribute('data-due-date');
+
+            if (taskElement) {
+              const dueDateElem = taskElement.querySelector('.due-date-display');
+            
+              if (dueDateElem) {
+                // Удаляем старые классы подсветки
+                dueDateElem.classList.remove('text-danger', 'text-warning', 'text-muted');
+              
+                if (newStatus === 'completed') {
+                  dueDateElem.classList.add('text-muted');
+                } else if (dueDateStr) {
+                  const dueDate = new Date(dueDateStr);
+                  const today = new Date();
+                
+                  // Обнуляем время для точного сравнения
+                  today.setHours(0, 0, 0, 0);
+                  dueDate.setHours(0, 0, 0, 0);
+                
+                  const msInDay = 1000 * 60 * 60 * 24;
+                  const diffDays = Math.floor((dueDate - today) / msInDay);
+                
+                  if (diffDays < 0) {
+                    dueDateElem.classList.add('text-danger');
+                  } else if (diffDays <= 2) {
+                    dueDateElem.classList.add('text-warning');
+                  } else {
+                    dueDateElem.classList.add('text-muted');
+                  }
+                }
+              }
+            }
+
           } else {
             alert('Помилка зміни статусу: ' + data.error);
           }

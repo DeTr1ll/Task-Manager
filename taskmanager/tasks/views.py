@@ -2,7 +2,7 @@ from datetime import timedelta
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Case, When, Value, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -51,24 +51,42 @@ def task_list(request):
             Q(title__icontains=query) |
             Q(tags__name__icontains=query)
         ).distinct()
-    tasks = tasks.order_by('-created_at')
 
-    for task in tasks:
-        if task.due_date and task.status != 'completed':
+    # Сортировка: сначала невыполненные, затем по дедлайну
+    tasks = tasks.annotate(
+        completed_order=Case(
+            When(status='completed', then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField()
+        )
+    ).order_by('completed_order', 'due_date', '-created_at')
+
+    # Добавляем поле для подсветки даты
+    task_list = list(tasks)
+    for task in task_list:
+        if task.status == 'completed':
+            task.card_highlight = 'list-group-item-success'
+            task.due_highlight = 'text-muted'
+        elif task.due_date:
             if task.due_date < today:
-                task.highlight = 'danger'
+                task.card_highlight = ''
+                task.due_highlight = 'text-danger'
             elif task.due_date <= today + timedelta(days=2):
-                task.highlight = 'warning'
+                task.card_highlight = ''
+                task.due_highlight = 'text-warning'
             else:
-                task.highlight = ''
+                task.card_highlight = ''
+                task.due_highlight = 'text-muted'
         else:
-            task.highlight = 'success'
+            task.card_highlight = ''
+            task.due_highlight = 'text-muted'
 
     return render(request, 'tasks/tasks.html', {
-        'tasks': tasks,
+        'tasks': task_list,
         'status_filter': status_filter,
         'query': query,
     })
+
 
 @login_required
 def task_create(request):
@@ -81,7 +99,7 @@ def task_create(request):
             task.save()
             task.tags.set(tags)
             form.save_m2m()
-            messages.success(request, '✅ Задачу успішно створено.')
+            messages.success(request, '<i class="bi bi-check2"></i> Задачу успішно створено.')
             return redirect('task_list')
     else:
         form = TaskForm(user=request.user)
@@ -106,7 +124,7 @@ def task_edit(request, id):
             tags = handle_tags_input(tags_input, request.user)
             task.tags.set(tags)
 
-            messages.info(request, '✏️ Задачу оновлено.')
+            messages.info(request, '<i class="bi bi-pencil-fill"></i> Задачу оновлено.')
             return redirect('task_list')
     else:
         form = TaskForm(instance=task, user=request.user)
@@ -131,7 +149,7 @@ def task_update_status_ajax(request, id):
 def task_delete(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
     task.delete()
-    messages.warning(request, '🗑️ Задачу видалено.')
+    messages.warning(request, '<i class="bi bi-trash-fill"></i> Задачу видалено.')
     return redirect('task_list')
 
 def handle_tags_input(tags_str, user):
