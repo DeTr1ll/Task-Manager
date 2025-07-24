@@ -71,7 +71,7 @@ def task_list(request):
             if task.due_date < today:
                 task.card_highlight = ''
                 task.due_highlight = 'text-danger'
-            elif task.due_date <= today + timedelta(days=2):
+            elif task.due_date <= today + timedelta(days=0):
                 task.card_highlight = ''
                 task.due_highlight = 'text-warning'
             else:

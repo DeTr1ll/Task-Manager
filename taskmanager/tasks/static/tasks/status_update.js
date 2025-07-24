@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (diffDays < 0) {
         dueDateElem.classList.add('text-danger');
-      } else if (diffDays <= 2) {
+      } else if (diffDays <= 0) {
         dueDateElem.classList.add('text-warning');
       } else {
         dueDateElem.classList.add('text-muted');
@@ -99,42 +99,45 @@ document.addEventListener('DOMContentLoaded', function () {
   function reorderTask(taskElement, newStatus, dueDateStr) {
     const listGroup = taskElement.parentElement;
     taskElement.setAttribute('data-status', newStatus);
-
+    
     const hasDueDate = Boolean(dueDateStr);
     const taskDueDate = hasDueDate ? new Date(dueDateStr) : null;
-
+    if (taskDueDate) taskDueDate.setHours(0, 0, 0, 0); // сброс времени
+    
     if (newStatus === 'completed') {
       listGroup.appendChild(taskElement);
       taskElement.classList.add('list-group-item-success');
       return;
     }
-
+  
     taskElement.classList.remove('list-group-item-success');
-
+  
     const tasks = Array.from(listGroup.children);
     let inserted = false;
-
+  
     for (const el of tasks) {
       const status = el.getAttribute('data-status');
       if (status === 'completed') continue;
-
+    
       const elDueDateStr = el.getAttribute('data-due-date');
       const elHasDueDate = Boolean(elDueDateStr);
       const elDueDate = elHasDueDate ? new Date(elDueDateStr) : null;
-
+      if (elDueDate) elDueDate.setHours(0, 0, 0, 0); // сброс времени
+    
+      // Логика вставки
       if (hasDueDate && !elHasDueDate) {
         listGroup.insertBefore(taskElement, el);
         inserted = true;
         break;
       }
-
+    
       if (hasDueDate && elHasDueDate && taskDueDate < elDueDate) {
         listGroup.insertBefore(taskElement, el);
         inserted = true;
         break;
       }
     }
-
+  
     if (!inserted) {
       const firstCompleted = tasks.find(el => el.getAttribute('data-status') === 'completed');
       if (firstCompleted) {
@@ -143,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
         listGroup.appendChild(taskElement);
       }
     }
-  } 
+  }
 
   function getCookie(name) {
     const cookies = document.cookie.split(';');
