@@ -34,6 +34,7 @@
                 id="task-{{ task.id }}"
                 data-due-date="{{ task.due_date|date:'Y-m-d' }}"
                 data-has-description="{% if task.description %}true{% else %}false{% endif %}"
+                data-status="{{ task.status }}"
                 style="cursor: pointer;"
               >
                 <div class="d-flex justify-content-between flex-wrap">
