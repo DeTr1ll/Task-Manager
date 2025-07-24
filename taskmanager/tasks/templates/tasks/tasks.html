@@ -32,6 +32,7 @@
               <li class="list-group-item mb-3 shadow rounded
                 {{ task.card_highlight }}"
                 id="task-{{ task.id }}"
+                data-task-id="{{ task.id }}"
                 data-due-date="{{ task.due_date|date:'Y-m-d' }}"
                 data-has-description="{% if task.description %}true{% else %}false{% endif %}"
                 data-status="{{ task.status }}"
@@ -99,9 +100,9 @@
                     <a href="{% url 'task_edit' task.id %}" class="btn btn-sm btn-warning mb-2 w-100">
                       <i class="bi bi-pencil-fill me-1"></i> Редагувати
                     </a>
-                    <a href="{% url 'task_delete' task.id %}" class="btn btn-sm btn-danger w-100">
+                    <button class="btn btn-sm btn-danger w-100 delete-task-btn" data-task-id="{{ task.id }}">
                       <i class="bi bi-trash-fill me-1"></i> Видалити
-                    </a>
+                    </button>
                   </div>
 
                 </div>
@@ -121,6 +122,24 @@
     {% endif %}
 </div>
 
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">Підтвердження видалення</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрити"></button>
+      </div>
+      <div class="modal-body">
+        Ви впевнені, що хочете видалити цю задачу?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Видалити</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
   .collapse-description {
     max-height: 0;
@@ -137,4 +156,5 @@
 {% block scripts %}
     <script src="{% static 'tasks/status_update.js' %}"></script>
     <script src="{% static 'tasks/tasks_description_animation.js' %}"></script>
+    <script src="{% static 'tasks/confirmation_window.js' %}"></script>
 {% endblock %}

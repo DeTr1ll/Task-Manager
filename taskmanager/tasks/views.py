@@ -145,6 +145,7 @@ def task_update_status_ajax(request, id):
     task.save()
     return JsonResponse({'success': True, 'new_status_display': task.get_status_display()})
 
+@require_POST
 @login_required
 def task_delete(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
