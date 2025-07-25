@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const response = await fetch(`/tasks/tags/autocomplete/?term=${encodeURIComponent(lastTerm)}`);
+    const response = await fetch(`/tags/autocomplete/?term=${encodeURIComponent(lastTerm)}`);
     const suggestions = await response.json();
 
     suggestionsBox.innerHTML = '';

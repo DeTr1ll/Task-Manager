@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function updateTaskStatus(taskId, newStatus) {
-    fetch(`/tasks/${taskId}/update-status/`, {
+    fetch(`/${taskId}/update-status/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

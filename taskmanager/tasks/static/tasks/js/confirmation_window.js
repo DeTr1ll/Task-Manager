@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskId = confirmDeleteBtn.getAttribute('data-task-id');
     if (!taskId) return;
 
-    fetch(`/tasks/delete/${taskId}/`, {
+    fetch(`/delete/${taskId}/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': getCookie('csrftoken'),

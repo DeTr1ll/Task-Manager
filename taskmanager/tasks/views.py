@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -7,10 +8,13 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
 
+import json
+
 from .forms import TaskForm
-from .models import Task, Tag
+from .models import Task, Tag, TelegramProfile
 from .serializers import TaskSerializer
 
 
@@ -171,3 +175,16 @@ def tag_autocomplete(request):
         tags = Tag.objects.filter(name__icontains=term, user=user).values_list('name', flat=True).distinct()
 
     return JsonResponse(list(tags), safe=False)
+
+def bind_telegram(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        username = data.get('username')
+        chat_id = data.get('chat_id')
+
+        try:
+            user = User.objects.get(username=username)
+            TelegramProfile.objects.update_or_create(user=user, defaults={'chat_id': chat_id})
+            return JsonResponse({'status': 'ok'})
+        except User.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)

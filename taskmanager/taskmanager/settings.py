@@ -107,7 +107,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGIN_REDIRECT_URL = '/tasks/' # Redirect to tasks page after login
+LOGIN_REDIRECT_URL = '/' # Redirect to tasks page after login
 LOGIN_URL = 'login' # URL to redirect to for login
 
 # Internationalization
@@ -148,3 +148,6 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+TELEGRAM_BOT_TOKEN = '8230351064:AAGt9EgHnZEqRMAcri3rviT00jhVG8suhYA'
+TELEGRAM_CHAT_ID = '648571108'
