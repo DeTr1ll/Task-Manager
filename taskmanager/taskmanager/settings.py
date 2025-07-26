@@ -29,11 +29,14 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [
     '4abf593d15b1.ngrok-free.app',
+    'taskino-3hzc.onrender.com',
     'localhost',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://4abf593d15b1.ngrok-free.app",
+    "https://taskino-3hzc.onrender.com",
+    "http://localhost:8000",
 ]
 
 
