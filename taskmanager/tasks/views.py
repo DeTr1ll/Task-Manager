@@ -10,6 +10,11 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
+import hashlib
+import hmac
+from django.conf import settings
+from django.contrib.auth import login
+from django.http import HttpResponseBadRequest
 
 import json
 
@@ -188,3 +193,28 @@ def bind_telegram(request):
             return JsonResponse({'status': 'ok'})
         except User.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
+        
+@csrf_exempt
+def telegram_auth(request):
+    data = request.GET.dict()
+    received_hash = data.pop('hash')
+
+    # Проверь подлинность
+    check_string = '\n'.join([f'{k}={v}' for k, v in sorted(data.items())])
+    secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
+    h = hmac.new(secret_key, msg=check_string.encode(), digestmod=hashlib.sha256).hexdigest()
+
+    if h != received_hash:
+        return HttpResponseBadRequest("Невірний підпис")
+
+    # Найти пользователя по telegram_id и залогинить
+    telegram_id = int(data['id'])
+
+    try:
+        profile = TelegramProfile.objects.get(chat_id=telegram_id)
+        user = profile.user
+        login(request, user)  # авторизация в Django
+    except TelegramProfile.DoesNotExist:
+        return redirect('/register/')  # или предложить регистрацию
+
+    return redirect('/')  # куда перебрасывать после входа
