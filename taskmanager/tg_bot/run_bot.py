@@ -47,5 +47,20 @@ application = ApplicationBuilder().token(TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button_handler))
 
+from telegram.ext import MessageHandler, filters
+
+async def check_token(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    token = update.message.text.strip()
+    try:
+        profile = TelegramProfile.objects.get(temp_token=token)
+        profile.chat_id = update.message.chat_id
+        profile.temp_token = None
+        profile.save()
+        await update.message.reply_text("✅ Telegram прив’язано!")
+    except TelegramProfile.DoesNotExist:
+        await update.message.reply_text("❌ Недійсний токен")
+
+application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), check_token))
+
 if __name__ == "__main__":
     application.run_polling()

@@ -181,40 +181,14 @@ def tag_autocomplete(request):
 
     return JsonResponse(list(tags), safe=False)
 
-def bind_telegram(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        username = data.get('username')
-        chat_id = data.get('chat_id')
-
-        try:
-            user = User.objects.get(username=username)
-            TelegramProfile.objects.update_or_create(user=user, defaults={'chat_id': chat_id})
-            return JsonResponse({'status': 'ok'})
-        except User.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
-        
-@csrf_exempt
-def telegram_auth(request):
-    data = request.GET.dict()
-    received_hash = data.pop('hash')
-
-    # Проверь подлинность
-    check_string = '\n'.join([f'{k}={v}' for k, v in sorted(data.items())])
-    secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
-    h = hmac.new(secret_key, msg=check_string.encode(), digestmod=hashlib.sha256).hexdigest()
-
-    if h != received_hash:
-        return HttpResponseBadRequest("Невірний підпис")
-
-    # Найти пользователя по telegram_id и залогинить
-    telegram_id = int(data['id'])
-
+@login_required
+def bind_telegram(request, token):
     try:
-        profile = TelegramProfile.objects.get(chat_id=telegram_id)
-        user = profile.user
-        login(request, user)  # авторизация в Django
+        profile = TelegramProfile.objects.get(temp_token=token)
+        if profile.user == request.user:
+            profile.chat_id = request.GET.get('chat_id')
+            profile.temp_token = None
+            profile.save()
     except TelegramProfile.DoesNotExist:
-        return redirect('/register/')  # или предложить регистрацию
-
-    return redirect('/')  # куда перебрасывать после входа
+        pass
+    return redirect("/")

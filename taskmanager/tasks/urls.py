@@ -14,5 +14,5 @@ urlpatterns = [
     path('<int:id>/update-status/', views.task_update_status_ajax, name='task_update_status_ajax'),
     path('tags/autocomplete/', views.tag_autocomplete, name='tag_autocomplete'),
     path('', include(router.urls)),
-    path('api/telegram-bind/', views.bind_telegram),
+    path("telegram/bind/<str:token>", views.bind_telegram, name="bind_telegram"),
 ]
