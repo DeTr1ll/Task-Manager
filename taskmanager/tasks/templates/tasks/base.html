@@ -27,7 +27,7 @@
                         <li class="nav-item">
                             <a class="nav-link disabled" href="#">Привіт, {{ user.username }}</a>
                         </li>
-                        {% if user.telegramprofile.chat_id %}
+                        <!--{% if user.telegramprofile.chat_id %}
                             <li class="nav-item">
                                 <i class="bi bi-telegram"></i>
                                 <p>✅ Telegram прив’язаний</p>
@@ -38,7 +38,7 @@
                               <p>❌ Telegram не прив’язаний</p>
                               <a href="https://t.me/TaskinoTaskmanager_bot">Прив’язати</a>
                             </li>
-                        {% endif %}
+                        {% endif %}-->
                         <li class="nav-item">
                             <form method="post" action="{% url 'logout' %}" class="d-inline">
                                 {% csrf_token %}
