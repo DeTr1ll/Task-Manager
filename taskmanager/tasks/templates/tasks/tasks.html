@@ -122,6 +122,13 @@
     {% endif %}
 </div>
 
+{% if not user.telegramprofile.chat_id %}
+<div class="alert alert-info">
+  Хочете отримувати сповіщення в Telegram? 
+  <a href="https://t.me/TaskinoTaskmanager_bot">Прив'язати аккаунт</a>
+</div>
+{% endif %}
+
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">

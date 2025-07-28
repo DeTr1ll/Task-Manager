@@ -1,66 +1,47 @@
+# tg_bot/run_bot.py
 import os
-import sys
-from dotenv import load_dotenv
 import django
-from decouple import config
+import sys
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from django.utils.crypto import get_random_string
+from asgiref.sync import sync_to_async
+from dotenv import load_dotenv
 
-# Добавляем корень проекта в sys.path, чтобы Python видел taskmanager.settings
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if BASE_DIR not in sys.path:
-    sys.path.insert(0, BASE_DIR)
-
-# Загружаем переменные окружения из .env
-load_dotenv(os.path.join(BASE_DIR, '.env'))
-
-# Устанавливаем настройки Django
+# Django init
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(BASE_DIR)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 django.setup()
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
-from tasks.models import TelegramProfile, User
-from django.utils.crypto import get_random_string
+from tasks.models import TelegramProfile
 
-# Получаем токен из переменных окружения
-TOKEN = config('TELEGRAM_BOT_TOKEN')
+FRONTEND_URL = "https://taskino-3hzc.onrender.com"
+
+@sync_to_async
+def create_temp_token(chat_id):
+    token = get_random_string(16)
+    profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
+    profile.temp_token = token
+    profile.save()
+    return token
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("🔐 Логін", callback_data="login")],
-    ]
+    chat_id = update.effective_chat.id
+    token = await create_temp_token(chat_id)
+    link = f"{FRONTEND_URL}/telegram/confirm?token={token}&chat_id={chat_id}"
+
     await update.message.reply_text(
-        "Привіт! Цей бот надсилає нагадування про задачі з сайту.",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        "🔗 Чтобы привязать Telegram к своему аккаунту на сайте, перейди по ссылке:\n\n"
+        f"{link}\n\n"
+        "Важно: ты должен быть авторизован на сайте в браузере."
     )
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    if query.data == "login":
-        token = get_random_string(16)
-        await query.edit_message_text(
-            f"Перейди на сайт для прив’язки Telegram: https://taskino-3hzc.onrender.com/telegram/bind/{token}"
-        )
-
-application = ApplicationBuilder().token(TOKEN).build()
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(button_handler))
-
-from telegram.ext import MessageHandler, filters
-
-async def check_token(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    token = update.message.text.strip()
-    try:
-        profile = TelegramProfile.objects.get(temp_token=token)
-        profile.chat_id = update.message.chat_id
-        profile.temp_token = None
-        profile.save()
-        await update.message.reply_text("✅ Telegram прив’язано!")
-    except TelegramProfile.DoesNotExist:
-        await update.message.reply_text("❌ Недійсний токен")
-
-application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), check_token))
+def main():
+    app = ApplicationBuilder().token(os.environ["TELEGRAM_BOT_TOKEN"]).build()
+    app.add_handler(CommandHandler("start", start))
+    app.run_polling()
 
 if __name__ == "__main__":
-    application.run_polling()
+    main()

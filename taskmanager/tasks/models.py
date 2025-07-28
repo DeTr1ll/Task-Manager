@@ -28,8 +28,8 @@ class Tag(models.Model):
 
 class TelegramProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    chat_id = models.BigIntegerField(blank=True, null=True)
-    temp_token = models.CharField(max_length=100, blank=True, null=True)
+    chat_id = models.BigIntegerField(unique=True, null=True, blank=True)
+    temp_token = models.CharField(max_length=32, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.username} Telegram"
+        return f"{self.user.username} – {self.chat_id}"

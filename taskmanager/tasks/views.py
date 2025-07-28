@@ -182,13 +182,24 @@ def tag_autocomplete(request):
     return JsonResponse(list(tags), safe=False)
 
 @login_required
-def bind_telegram(request, token):
+def confirm_telegram(request):
+    token = request.GET.get("token")
+    chat_id = request.GET.get("chat_id")
+
+    if not token or not chat_id:
+        messages.error(request, "Неверная ссылка")
+        return redirect("/")
+
     try:
         profile = TelegramProfile.objects.get(temp_token=token)
-        if profile.user == request.user:
-            profile.chat_id = request.GET.get('chat_id')
-            profile.temp_token = None
-            profile.save()
     except TelegramProfile.DoesNotExist:
-        pass
+        messages.error(request, "Токен не найден или устарел.")
+        return redirect("/")
+
+    profile.chat_id = chat_id
+    profile.user = request.user
+    profile.temp_token = None
+    profile.save()
+
+    messages.success(request, "✅ Telegram успешно привязан!")
     return redirect("/")
