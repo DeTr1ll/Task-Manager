@@ -27,6 +27,7 @@ from tasks import views
 
 
 urlpatterns = [
+    path('api/send-daily/', views.trigger_deadlines, name='trigger_deadlines'),
     path('admin/', admin.site.urls),
     path('', include('tasks.urls')),
     path('register/', views.register, name='register'),
@@ -34,6 +35,4 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/send-daily/', views.trigger_deadlines),
-    
 ]

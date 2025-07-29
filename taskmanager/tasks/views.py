@@ -12,6 +12,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
 import hashlib
 import hmac
+from rest_framework.response import Response
 from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpResponseBadRequest
@@ -248,17 +249,18 @@ def notify_telegram_on_link(chat_id: int):
     requests.post(url, json=data)
 
 @csrf_exempt
-@api_view(['POST'])
-@authentication_classes([])  # Отключаем DRF-аутентификацию
-@permission_classes([AllowAny])  # Разрешаем всем
 def trigger_deadlines(request):
-    print("CRON_SECRET:", os.getenv('CRON_SECRET'))
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST allowed'}, status=405) 
     auth_header = request.headers.get("Authorization", "")
+    auth_header = request.headers.get("Authorization", "") 
     if not auth_header.startswith("Cron "):
-        return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403)
-
+        return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403) 
     secret = auth_header.removeprefix("Cron ").strip()
-    if secret != os.getenv('CRON_SECRET'):
+    cron_secret = os.getenv('CRON_SECRET')
+    if cron_secret is None:
+        return JsonResponse({'error': 'Server misconfiguration: CRON_SECRET not set'}, status=500) 
+    if secret != cron_secret:
         return JsonResponse({'error': 'Unauthorized (bad secret)'}, status=403)
 
     today = now().date()
