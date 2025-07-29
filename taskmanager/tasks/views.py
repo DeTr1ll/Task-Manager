@@ -252,6 +252,7 @@ def notify_telegram_on_link(chat_id: int):
 @authentication_classes([])  # Отключаем DRF-аутентификацию
 @permission_classes([AllowAny])  # Разрешаем всем
 def trigger_deadlines(request):
+    print("CRON_SECRET:", os.getenv('CRON_SECRET'))
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Cron "):
         return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403)
@@ -267,14 +268,14 @@ def trigger_deadlines(request):
     for profile in profiles:
         user = profile.user
         chat_id = profile.chat_id
-        tasks_today = Task.objects.filter(user=user, deadline__date=today, completed=False)
+        tasks_today = Task.objects.filter(user=user, due_date=today).exclude(status='completed')
 
         if not tasks_today.exists():
             continue
 
         message = "🗓️ *Сьогоднішні дедлайни:*\n\n"
         for task in tasks_today:
-            message += f"• {task.title} — 🕓 {task.deadline.strftime('%H:%M')}\n"
+            message += f"• {task.title} — 🕓 {task.due_date.strftime('%H:%M')}\n"
 
         bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
 
