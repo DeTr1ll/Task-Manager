@@ -1,7 +1,7 @@
 import os
 import sys
 import django
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from telegram import (
     Update,
     InlineKeyboardButton,
@@ -20,7 +20,7 @@ from asgiref.sync import sync_to_async
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(BASE_DIR)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+# load_dotenv(os.path.join(BASE_DIR, ".env"))
 django.setup()
 
 # Импорт модели
