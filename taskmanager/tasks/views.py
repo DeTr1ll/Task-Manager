@@ -249,7 +249,7 @@ def notify_telegram_on_link(chat_id: int):
     requests.post(url, json=data)
 
 @csrf_exempt
-def trigger_deadlines(request):
+async def trigger_deadlines(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST allowed'}, status=405) 
     auth_header = request.headers.get("Authorization", "")
@@ -265,6 +265,8 @@ def trigger_deadlines(request):
 
     today = now().date()
     bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
+    today = now().date()
+
     profiles = TelegramProfile.objects.exclude(chat_id=None).select_related("user")
 
     for profile in profiles:
@@ -279,6 +281,6 @@ def trigger_deadlines(request):
         for task in tasks_today:
             message += f"• {task.title} — 🕓 {task.due_date.strftime('%H:%M')}\n"
 
-        bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+        await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
 
     return JsonResponse({'status': 'ok'})
