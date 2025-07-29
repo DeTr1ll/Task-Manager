@@ -242,7 +242,8 @@ def trigger_deadlines(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST allowed'}, status=405)
 
-    if request.headers.get("Authorization") != f"Bearer {os.getenv('CRON_SECRET')}":
+    auth_header = request.META.get('HTTP_AUTHORIZATION')
+    if auth_header != f"Bearer {os.getenv('CRON_SECRET')}":
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
     today = now().date()
