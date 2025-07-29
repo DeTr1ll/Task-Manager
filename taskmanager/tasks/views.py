@@ -239,10 +239,13 @@ def notify_telegram_on_link(chat_id: int):
 
 @csrf_exempt
 def trigger_deadlines(request):
+    print("trigger_deadlines вызван")
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST allowed'}, status=405)
 
-    auth_header = request.META.get('HTTP_AUTHORIZATION')
+    auth_header = request.headers.get("Authorization")
+    print(f"Authorization header: {auth_header}")
+
     if auth_header != f"Bearer {os.getenv('CRON_SECRET')}":
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
