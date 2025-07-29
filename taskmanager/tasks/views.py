@@ -17,6 +17,12 @@ from django.contrib.auth import login
 from django.http import HttpResponseBadRequest
 from django.utils.http import urlencode
 import requests
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from tasks.models import Task, TelegramProfile
+from django.utils.timezone import now
+from telegram import Bot
+import os
 
 import json
 
@@ -230,3 +236,31 @@ def notify_telegram_on_link(chat_id: int):
     }
     
     requests.post(url, json=data)
+
+@csrf_exempt
+def trigger_deadlines(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST allowed'}, status=405)
+
+    if request.headers.get("Authorization") != f"Bearer {os.getenv('CRON_SECRET')}":
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    today = now().date()
+    bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
+    profiles = TelegramProfile.objects.exclude(chat_id=None).select_related("user")
+
+    for profile in profiles:
+        user = profile.user
+        chat_id = profile.chat_id
+        tasks_today = Task.objects.filter(user=user, deadline__date=today, completed=False)
+
+        if not tasks_today.exists():
+            continue
+
+        message = "🗓️ *Сьогоднішні дедлайни:*\n\n"
+        for task in tasks_today:
+            message += f"• {task.title} — 🕓 {task.deadline.strftime('%H:%M')}\n"
+
+        bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+
+    return JsonResponse({'status': 'ok'})
