@@ -23,6 +23,8 @@ from tasks.models import Task, TelegramProfile
 from django.utils.timezone import now
 from telegram import Bot
 import os
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.permissions import AllowAny
 
 import json
 
@@ -246,18 +248,17 @@ def notify_telegram_on_link(chat_id: int):
     requests.post(url, json=data)
 
 @csrf_exempt
+@api_view(['POST'])
+@authentication_classes([])  # Отключаем DRF-аутентификацию
+@permission_classes([AllowAny])  # Разрешаем всем
 def trigger_deadlines(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST allowed'}, status=405)
-
-    # Безопасное чтение заголовка Authorization даже если его фильтрует сервер
-    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+    auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Cron "):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403)
 
     secret = auth_header.removeprefix("Cron ").strip()
     if secret != os.getenv('CRON_SECRET'):
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
+        return JsonResponse({'error': 'Unauthorized (bad secret)'}, status=403)
 
     today = now().date()
     bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
