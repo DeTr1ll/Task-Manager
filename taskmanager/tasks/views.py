@@ -1,5 +1,4 @@
 from datetime import timedelta
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,12 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
-import hashlib
-import hmac
-from rest_framework.response import Response
 from django.conf import settings
-from django.contrib.auth import login
-from django.http import HttpResponseBadRequest
 from django.utils.http import urlencode
 import requests
 from django.http import JsonResponse
@@ -24,10 +18,7 @@ from tasks.models import Task, TelegramProfile
 from django.utils.timezone import now
 from telegram import Bot
 import os
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import AllowAny
-
-import json
+from asgiref.sync import sync_to_async
 
 from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
@@ -252,29 +243,31 @@ def notify_telegram_on_link(chat_id: int):
 async def trigger_deadlines(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST allowed'}, status=405) 
+
     auth_header = request.headers.get("Authorization", "")
-    auth_header = request.headers.get("Authorization", "") 
     if not auth_header.startswith("Cron "):
         return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403) 
+
     secret = auth_header.removeprefix("Cron ").strip()
     cron_secret = os.getenv('CRON_SECRET')
     if cron_secret is None:
         return JsonResponse({'error': 'Server misconfiguration: CRON_SECRET not set'}, status=500) 
+
     if secret != cron_secret:
         return JsonResponse({'error': 'Unauthorized (bad secret)'}, status=403)
 
     today = now().date()
     bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
-    today = now().date()
 
-    profiles = TelegramProfile.objects.exclude(chat_id=None).select_related("user")
+    profiles = await sync_to_async(list)(TelegramProfile.objects.exclude(chat_id=None).select_related("user"))
 
     for profile in profiles:
         user = profile.user
         chat_id = profile.chat_id
-        tasks_today = Task.objects.filter(user=user, due_date=today).exclude(status='completed')
 
-        if not tasks_today.exists():
+        tasks_today = await sync_to_async(list)(Task.objects.filter(user=user, due_date=today).exclude(status='completed'))
+
+        if not tasks_today:
             continue
 
         message = "🗓️ *Сьогоднішні дедлайни:*\n\n"
