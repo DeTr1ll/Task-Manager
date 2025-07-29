@@ -11,5 +11,4 @@ jobs:
     steps:
       - name: Send request to Taskino
         run: |
-          curl -X POST https://taskino-3hzc.onrender.com/api/send-daily/ \
-               -H "Authorization: Cron ${{ secrets.CRON_SECRET }}"
+          curl -X POST "https://taskino-3hzc.onrender.com/api/send-daily/" -H "Authorization: Cron ${{ secrets.CRON_SECRET }}"
