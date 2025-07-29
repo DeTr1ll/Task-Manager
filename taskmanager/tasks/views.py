@@ -30,6 +30,14 @@ from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
 from .serializers import TaskSerializer
 
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.utils.timezone import now
+from telegram import Bot
+import os
+
+from .models import TelegramProfile, Task
+
 
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
@@ -237,20 +245,13 @@ def notify_telegram_on_link(chat_id: int):
     
     requests.post(url, json=data)
 
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.utils.timezone import now
-from telegram import Bot
-import os
-
-from .models import TelegramProfile, Task
-
 @csrf_exempt
 def trigger_deadlines(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Only POST allowed'}, status=405)
 
-    auth_header = request.headers.get("Authorization", "")
+    # Безопасное чтение заголовка Authorization даже если его фильтрует сервер
+    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
     if not auth_header.startswith("Cron "):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
