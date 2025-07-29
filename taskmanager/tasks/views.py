@@ -15,6 +15,8 @@ import hmac
 from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpResponseBadRequest
+from django.utils.http import urlencode
+import requests
 
 import json
 
@@ -185,7 +187,10 @@ def tag_autocomplete(request):
 def confirm_telegram(request):
     token = request.GET.get("token")
     chat_id = request.GET.get("chat_id")
-
+    if not request.user.is_authenticated:
+        query = urlencode({'next': request.get_full_path()})
+        return redirect(f'{settings.LOGIN_URL}?{query}')
+    
     if not token or not chat_id:
         messages.error(request, "Неверная ссылка")
         return redirect("/")
@@ -201,5 +206,27 @@ def confirm_telegram(request):
     profile.temp_token = None
     profile.save()
 
+    if profile.chat_id:
+            notify_telegram_on_link(profile.chat_id)
+
     messages.success(request, "✅ Telegram успешно привязан!")
     return redirect("/")
+
+def notify_telegram_on_link(chat_id: int):
+    token = settings.TELEGRAM_BOT_TOKEN
+    message = "✅ Telegram успішно прив'язано! Тепер ви можете отримувати сповіщення."
+    
+    keyboard = {
+        "inline_keyboard": [
+            [{"text": "❌ Відв'язати Telegram", "callback_data": "unlink"}]
+        ]
+    }
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": message,
+        "reply_markup": keyboard
+    }
+    
+    requests.post(url, json=data)
