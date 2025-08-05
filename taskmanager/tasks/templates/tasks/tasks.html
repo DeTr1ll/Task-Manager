@@ -8,25 +8,36 @@
 <div class="container py-4">
     <h2 class="mb-4 text-center"><i class="bi bi-stickies-fill"></i> {% trans "My Tasks" %}</h2>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'task_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> {% trans "New Task" %}</a>
-        <form method="get" class="row mb-4 g-2">
-            <div class="col-md-4">
-              <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="{% trans "Search by title" %}">
-            </div>
-            <div class="col-md-4">
-              <select name="status" class="form-select">
-                <option value="">{% trans "All statuses" %}</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %} title="{% trans 'Pending' %}">{% trans "Pending" %}</option>
-                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %} title="{% trans 'In Progress' %}">{% trans "In Progress" %}</option>
-                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %} title="{% trans 'Completed' %}">{% trans "Completed" %}</option>
-              </select>
-            </div>
-            <div class="col-md-4 d-grid">
-              <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> {% trans "Apply" %}</button>
-            </div>
-        </form>
-    </div>
+<div class="row mb-4 align-items-center">
+  <!-- Левая колонка: New Task -->
+  <div class="col-12 col-md-auto mb-2 mb-md-0">
+    <a href="{% url 'task_create' %}" class="btn btn-primary w-100 w-md-auto">
+      <i class="bi bi-plus-lg"></i> {% trans "New Task" %}
+    </a>
+  </div>
+
+  <!-- Правая колонка: форма поиска -->
+  <div class="col-12 col-md">
+    <form method="get" class="row g-2">
+      <div class="col-12 col-sm-6 col-md-7">
+        <input type="text" name="q" value="{{ query|default_if_none:'' }}" class="form-control" placeholder="{% trans "Search by title" %}">
+      </div>
+      <div class="col-12 col-sm-4 col-md-3">
+        <select name="status" class="form-select">
+          <option value="">{% trans "All statuses" %}</option>
+          <option value="pending" {% if status_filter == 'pending' %}selected{% endif %} title="{% trans 'Pending' %}">{% trans "Pending" %}</option>
+          <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %} title="{% trans 'In Progress' %}">{% trans "In Progress" %}</option>
+          <option value="completed" {% if status_filter == 'completed' %}selected{% endif %} title="{% trans 'Completed' %}">{% trans "Completed" %}</option>
+        </select>
+      </div>
+      <div class="col-12 col-sm-2 col-md-2 d-grid">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search"></i> {% trans "Apply" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
     {% if tasks %}
         <ul class="list-group">

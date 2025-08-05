@@ -16,82 +16,91 @@
 </head>
 <body class="bg-light">
 
-<!-- Навигация -->
+    <!-- Навигация -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-    <div class="container">
-        <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
-            <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40" class="me-2">
-            <span class="fs-4 fw-bold text-dark">Taskino</span>
-        </a>
-        <div class="ms-auto d-flex align-items-center">
-            <div class="dropdown me-3">
-        <button class="dropdown-toggle d-flex align-items-center" 
-                id="languageDropdown" 
-                data-bs-toggle="dropdown" 
-                aria-expanded="false" type="button">
-            <span>
-                {% if request.LANGUAGE_CODE == 'en' %}🇬🇧{% elif request.LANGUAGE_CODE == 'uk' %}🇺🇦{% elif request.LANGUAGE_CODE == 'ru' %}🇷🇺{% endif %}
-            </span>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
-            <li>
-                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.path }}">
-                    <input type="hidden" name="language" value="en">
-                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">
-                        <span>🇬🇧</span> English
-                    </button>
-                </form>
-            </li>
-            <li>
-                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.path }}">
-                    <input type="hidden" name="language" value="uk">
-                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'uk' %}active{% endif %}">
-                        <span>🇺🇦</span> Українська
-                    </button>
-                </form>
-            </li>
-            <li>
-                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{{ request.path }}">
-                    <input type="hidden" name="language" value="ru">
-                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'ru' %}active{% endif %}">
-                        <span>🇷🇺</span> Русский
-                    </button>
-                </form>
-            </li>
-        </ul>
-</div>
+  <div class="container d-flex justify-content-between align-items-center">
 
+    <!-- Левая часть: логотип -->
+    <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
+      <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40" class="me-2">
+    </a>
 
-            <ul class="navbar-nav">
-                {% if user.is_authenticated %}
-                    <li class="nav-item">
-                        <a class="nav-link disabled" href="#">{% trans "Hello" %}, {{ user.username }}</a>
-                    </li>
-                    <li class="nav-item">
-                        <form method="post" action="{% url 'logout' %}" class="d-inline">
-                            {% csrf_token %}
-                            <button class="btn btn-link btn-danger nav-link" type="submit">
-                                <i class="bi bi-box-arrow-left"></i> {% trans "Exit" %}
-                            </button>
-                        </form>
-                    </li>
-                {% else %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">{% trans "Login" %}</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'register' %}">{% trans "Register" %}</a>
-                    </li>
-                {% endif %}
-            </ul>
+    <!-- Правая часть: кнопка языка, тогглер и меню -->
+    <div class="d-flex align-items-center">
+
+      <!-- Кнопка выбора языка -->
+      <div class="me-2">
+        <div class="dropdown">
+          <button class="btn btn-secondary dropdown-toggle py-1" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 50px;">
+            {% if request.LANGUAGE_CODE == 'en' %}🇬🇧{% elif request.LANGUAGE_CODE == 'uk' %}🇺🇦{% elif request.LANGUAGE_CODE == 'ru' %}🇷🇺{% else %}🌐{% endif %}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+            <li>
+              <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <input type="hidden" name="language" value="en">
+                <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">
+                  🇬🇧 English
+                </button>
+              </form>
+            </li>
+            <li>
+              <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <input type="hidden" name="language" value="uk">
+                <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'uk' %}active{% endif %}">
+                  🇺🇦 Українська
+                </button>
+              </form>
+            </li>
+            <li>
+              <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <input type="hidden" name="language" value="ru">
+                <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'ru' %}active{% endif %}">
+                  🇷🇺 Русский
+                </button>
+              </form>
+            </li>
+          </ul>
         </div>
+      </div>
+
+      <!-- Кнопка-тогглер -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Сворачиваемое меню -->
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav ms-auto d-flex align-items-center">
+          {% if user.is_authenticated %}
+            <li class="nav-item d-flex align-items-center">
+              <span class="nav-link disabled me-2">{% trans "Hello" %}, {{ user.username }}</span>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="btn btn-danger" type="submit">
+                  <i class="bi bi-box-arrow-left"></i> {% trans "Exit" %}
+                </button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">{% trans "Login" %}</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'register' %}">{% trans "Register" %}</a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+
     </div>
+  </div>
 </nav>
 
 
