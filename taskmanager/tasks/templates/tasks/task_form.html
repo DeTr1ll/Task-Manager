@@ -1,52 +1,81 @@
 {% extends 'tasks/base.html' %}
 {% load static %}
+{% load i18n %}
 
 {% block title %}
-    {% if is_edit %}Редагувати задачу{% else %}Створити задачу{% endif %}
+    {% if is_edit %}
+        {% trans "Edit Task" %}
+    {% else %}
+        {% trans "Create Task" %}
+    {% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <h2 class="mb-4 text-center">
-        {% if is_edit %}<i class="bi bi-pencil-fill"></i> Редагувати задачу{% else %}<i class="bi bi-file-earmark-plus-fill"></i> Створити нову задачу{% endif %}
+        {% if is_edit %}
+            <i class="bi bi-pencil-fill"></i> {% trans "Edit Task" %}
+        {% else %}
+            <i class="bi bi-file-earmark-plus-fill"></i> {% trans "Create New Task" %}
+        {% endif %}
     </h2>
 
     <form method="post" class="mx-auto" style="max-width: 600px;">
-    {% csrf_token %}
-    {% if form.errors %}
-      <div class="alert alert-danger">
-        <strong><i class="bi bi-exclamation-circle-fill"></i> Помилка:</strong> Будь ласка, виправте помилки нижче.
-      </div>
-    {% endif %}
-    
-    {{ form.title.label_tag }}
-    {{ form.title }}
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong><i class="bi bi-exclamation-circle-fill"></i> {% trans "Error:" %}</strong> {% trans "Please fix the errors below." %}
+            </div>
+        {% endif %}
+        
+        {{ form.title.label_tag }}
+        {{ form.title }}
 
-    {{ form.description.label_tag }}
-    {{ form.description }}
+        {{ form.description.label_tag }}
+        {{ form.description }}
 
-    {{ form.status.label_tag }}
-    {{ form.status }}
+        {{ form.status.label_tag }}
+        {{ form.status }}
 
-    {{ form.due_date.label_tag }}
-    {{ form.due_date }}
+        {{ form.due_date.label_tag }}
+        {{ form.due_date }}
 
-    <div class="mb-3 position-relative" style="max-width: 600px;">
-        {{ form.tags_input.label_tag }}
-        {{ form.tags_input }}
-        <div id="tag-suggestions"
-             class="list-group position-absolute w-100 shadow-sm"
-             style="top: 100%; left: 0; z-index: 1050; max-height: 200px; overflow-y: auto;">
+        <div class="mb-3 position-relative" style="max-width: 600px;">
+            {{ form.tags_input.label_tag }}
+            {{ form.tags_input }}
+            <div id="tag-suggestions"
+                 class="list-group position-absolute w-100 shadow-sm"
+                 style="top: 100%; left: 0; z-index: 1050; max-height: 200px; overflow-y: auto;">
+            </div>
         </div>
-    </div>
+
         <button type="submit" class="btn btn-success">
-            {% if is_edit %}<i class="bi bi-floppy2-fill"></i> Зберегти зміни{% else %}<i class="bi bi-check2"></i> Створити задачу{% endif %}
+            {% if is_edit %}
+                <i class="bi bi-floppy2-fill"></i> {% trans "Save Changes" %}
+            {% else %}
+                <i class="bi bi-check2"></i> {% trans "Create Task" %}
+            {% endif %}
         </button>
-        <a href="{% url 'task_list' %}" class="btn btn-danger"><i class="bi bi-arrow-bar-left"></i> Скасувати</a>
-    </div>
-</form>
+        <a href="{% url 'task_list' %}" class="btn btn-danger"><i class="bi bi-arrow-bar-left"></i> {% trans "Cancel" %}</a>
+    </form>
 </div>
 {% endblock %}
+
 {% block scripts %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/uk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <script src="{% static 'tasks/js/tags_autocomplete.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const langCode = document.documentElement.lang;
+        
+            flatpickr("#id_due_date", {
+                dateFormat: "Y-m-d",
+                locale: (langCode === "uk") ? "uk" :
+                        (langCode === "ru") ? "ru" : "default"
+            });
+        });
+    </script>
 {% endblock %}

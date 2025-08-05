@@ -1,7 +1,8 @@
 {% load static %}
+{% load i18n %}
 
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Taskino{% endblock %}</title>
@@ -10,53 +11,89 @@
     <link rel="icon" type="image/png" href="{% static 'tasks/img/favicon.png' %}">
     <!-- Bootstrap 5 (через CDN) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
 </head>
 <body class="bg-light">
 
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
-              <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40" class="me-2">
-              <span class="fs-4 fw-bold text-dark">Taskino</span>
-            </a>
-            <div>
-                <ul class="navbar-nav ms-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
-                            <a class="nav-link disabled" href="#">Привіт, {{ user.username }}</a>
-                        </li>
-                        <!--{% if user.telegramprofile.chat_id %}
-                            <li class="nav-item">
-                                <i class="bi bi-telegram"></i>
-                                <p>✅ Telegram прив’язаний</p>
-                            </li>
-                        {% else %}
-                            <li class="nav-item">
-                              <i class="bi bi-telegram"></i>
-                              <p>❌ Telegram не прив’язаний</p>
-                              <a href="https://t.me/TaskinoTaskmanager_bot">Прив’язати</a>
-                            </li>
-                        {% endif %}-->
-                        <li class="nav-item">
-                            <form method="post" action="{% url 'logout' %}" class="d-inline">
-                                {% csrf_token %}
-                                <button class="btn btn-link btn-danger nav-link" type="submit"><i class="bi bi-box-arrow-left"></i> Вийти</button>
-                            </form>
-                        </li>
-                    {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'login' %}">Увійти</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'register' %}">Зареєструватись</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+<!-- Навигация -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
+            <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40" class="me-2">
+            <span class="fs-4 fw-bold text-dark">Taskino</span>
+        </a>
+        <div class="ms-auto d-flex align-items-center">
+            <div class="dropdown me-3">
+        <button class="dropdown-toggle d-flex align-items-center" 
+                id="languageDropdown" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false" type="button">
+            <span>
+                {% if request.LANGUAGE_CODE == 'en' %}🇬🇧{% elif request.LANGUAGE_CODE == 'uk' %}🇺🇦{% elif request.LANGUAGE_CODE == 'ru' %}🇷🇺{% endif %}
+            </span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+            <li>
+                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="hidden" name="language" value="en">
+                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">
+                        <span>🇬🇧</span> English
+                    </button>
+                </form>
+            </li>
+            <li>
+                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="hidden" name="language" value="uk">
+                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'uk' %}active{% endif %}">
+                        <span>🇺🇦</span> Українська
+                    </button>
+                </form>
+            </li>
+            <li>
+                <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="hidden" name="language" value="ru">
+                    <button type="submit" class="btn {% if request.LANGUAGE_CODE == 'ru' %}active{% endif %}">
+                        <span>🇷🇺</span> Русский
+                    </button>
+                </form>
+            </li>
+        </ul>
+</div>
+
+
+            <ul class="navbar-nav">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#">{% trans "Hello" %}, {{ user.username }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button class="btn btn-link btn-danger nav-link" type="submit">
+                                <i class="bi bi-box-arrow-left"></i> {% trans "Exit" %}
+                            </button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">{% trans "Login" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'register' %}">{% trans "Register" %}</a>
+                    </li>
+                {% endif %}
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
+
 
     <div class="container">
 

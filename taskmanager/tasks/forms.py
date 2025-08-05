@@ -1,6 +1,8 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from .models import Task
+
 
 class TaskForm(forms.ModelForm):
     tags_input = forms.CharField(
@@ -8,19 +10,19 @@ class TaskForm(forms.ModelForm):
         widget=forms.TextInput(attrs={
             'id': 'tags-input',
             'class': 'form-control',
-            'placeholder': 'напр. робота, терміново',
+            'placeholder': _('e.g. work, urgent'),
             'autocomplete': 'off',
         }),
-        label="Мітки",
+        label=_("Tags"),
     )
     class Meta:
         model = Task
         fields = ['title', 'description', 'status', 'due_date']
         labels = {
-            'title': 'Назва задачі',
-            'description': 'Опис',
-            'status': 'Статус',
-            'due_date': 'Кінцева дата',
+            'title': _('Task Title'),
+            'description': _('Description'),
+            'status': _('Status'),
+            'due_date': _('Due Date'),
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -31,8 +33,9 @@ class TaskForm(forms.ModelForm):
                 format='%Y-%m-%d'
             ),
         }
+
     def __init__(self, *args, **kwargs):
-           self.user = kwargs.pop('user', None)
-           super().__init__(*args, **kwargs)
-           if self.instance.pk:
-               self.fields['tags_input'].initial = ', '.join(tag.name for tag in self.instance.tags.all())
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['tags_input'].initial = ', '.join(tag.name for tag in self.instance.tags.all())

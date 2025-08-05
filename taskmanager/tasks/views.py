@@ -11,26 +11,16 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
 from django.conf import settings
 from django.utils.http import urlencode
+from django.utils.translation import gettext_lazy as _
 import requests
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from tasks.models import Task, TelegramProfile
-from django.utils.timezone import now
-from telegram import Bot
 import os
+from telegram import Bot
 from asgiref.sync import sync_to_async
+from django.utils.timezone import now
 
 from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
 from .serializers import TaskSerializer
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-from django.utils.timezone import now
-from telegram import Bot
-import os
-
-from .models import TelegramProfile, Task
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -43,16 +33,18 @@ class TaskViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
 def register(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Аккаунт створено. Тепер увійдіть в нього.')
+            messages.success(request, _('Account created. Please log in now.'))
             return redirect('login')
     else:
         form = UserCreationForm()
     return render(request, 'tasks/register.html', {'form': form})
+
 
 @login_required
 def task_list(request):
@@ -71,7 +63,6 @@ def task_list(request):
             Q(tags__name__icontains=query)
         ).distinct()
 
-    # Сортировка: сначала невыполненные, затем по дедлайну
     tasks = tasks.annotate(
         completed_order=Case(
             When(status='completed', then=Value(1)),
@@ -80,7 +71,6 @@ def task_list(request):
         )
     ).order_by('completed_order', 'due_date', '-created_at')
 
-    # Добавляем поле для подсветки даты
     task_list = list(tasks)
     for task in task_list:
         if task.status == 'completed':
@@ -110,7 +100,7 @@ def task_list(request):
 @login_required
 def task_create(request):
     if request.method == 'POST':
-        form = TaskForm(request.POST, user=request.user) 
+        form = TaskForm(request.POST, user=request.user)
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
@@ -118,7 +108,7 @@ def task_create(request):
             task.save()
             task.tags.set(tags)
             form.save_m2m()
-            messages.success(request, '<i class="bi bi-check2"></i> Задачу успішно створено.')
+            messages.success(request, '<i class="bi bi-check2"></i> ' + _('Task successfully created.'))
             return redirect('task_list')
     else:
         form = TaskForm(user=request.user)
@@ -127,6 +117,7 @@ def task_create(request):
         'form': form,
         'is_edit': False
     })
+
 
 @login_required
 def task_edit(request, id):
@@ -143,12 +134,13 @@ def task_edit(request, id):
             tags = handle_tags_input(tags_input, request.user)
             task.tags.set(tags)
 
-            messages.info(request, '<i class="bi bi-pencil-fill"></i> Задачу оновлено.')
+            messages.info(request, '<i class="bi bi-pencil-fill"></i> ' + _('Task updated.'))
             return redirect('task_list')
     else:
         form = TaskForm(instance=task, user=request.user)
 
     return render(request, 'tasks/task_form.html', {'form': form, 'is_edit': True})
+
 
 @login_required
 @require_POST
@@ -158,19 +150,21 @@ def task_update_status_ajax(request, id):
 
     valid_statuses = ['pending', 'in_progress', 'completed']
     if new_status not in valid_statuses:
-        return JsonResponse({'success': False, 'error': 'Невірний статус'}, status=400)
+        return JsonResponse({'success': False, 'error': _('Invalid status')}, status=400)
 
     task.status = new_status
     task.save()
     return JsonResponse({'success': True, 'new_status_display': task.get_status_display()})
+
 
 @require_POST
 @login_required
 def task_delete(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
     task.delete()
-    messages.warning(request, '<i class="bi bi-trash-fill"></i> Задачу видалено.')
+    messages.warning(request, '<i class="bi bi-trash-fill"></i> ' + _('Task deleted.') )
     return redirect('task_list')
+
 
 def handle_tags_input(tags_str, user):
     tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
@@ -179,6 +173,7 @@ def handle_tags_input(tags_str, user):
         tag, created = Tag.objects.get_or_create(name=name, user=user)
         tags.append(tag)
     return tags
+
 
 @login_required
 def tag_autocomplete(request):
@@ -191,6 +186,7 @@ def tag_autocomplete(request):
 
     return JsonResponse(list(tags), safe=False)
 
+
 @login_required
 def confirm_telegram(request):
     token = request.GET.get("token")
@@ -198,15 +194,15 @@ def confirm_telegram(request):
     if not request.user.is_authenticated:
         query = urlencode({'next': request.get_full_path()})
         return redirect(f'{settings.LOGIN_URL}?{query}')
-    
+
     if not token or not chat_id:
-        messages.error(request, "Неверная ссылка")
+        messages.error(request, _('Invalid link'))
         return redirect("/")
 
     try:
         profile = TelegramProfile.objects.get(temp_token=token)
     except TelegramProfile.DoesNotExist:
-        messages.error(request, "Токен не найден или устарел.")
+        messages.error(request, _('Token not found or expired.'))
         return redirect("/")
 
     profile.chat_id = chat_id
@@ -215,18 +211,19 @@ def confirm_telegram(request):
     profile.save()
 
     if profile.chat_id:
-            notify_telegram_on_link(profile.chat_id)
+        notify_telegram_on_link(profile.chat_id)
 
-    messages.success(request, "✅ Telegram успешно привязан!")
+    messages.success(request, _('✅ Telegram successfully linked!'))
     return redirect("/")
+
 
 def notify_telegram_on_link(chat_id: int):
     token = settings.TELEGRAM_BOT_TOKEN
-    message = "✅ Telegram успішно прив'язано! Тепер ви можете отримувати сповіщення."
-    
+    message = _("✅ Telegram successfully linked! You will now receive notifications.")
+
     keyboard = {
         "inline_keyboard": [
-            [{"text": "❌ Відв'язати Telegram", "callback_data": "unlink"}]
+            [{"text": _("❌ Unlink Telegram"), "callback_data": "unlink"}]
         ]
     }
 
@@ -236,8 +233,10 @@ def notify_telegram_on_link(chat_id: int):
         "text": message,
         "reply_markup": keyboard
     }
-    
+
     requests.post(url, json=data)
+
+
 
 @csrf_exempt
 async def trigger_deadlines(request):
