@@ -1,5 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
   const statusButtons = document.querySelectorAll('.status-btns button');
+  const langPrefixMatch = window.location.pathname.match(/^\/(en|ru|uk)(\/|$)/);
+  const langPrefix = langPrefixMatch ? `/${langPrefixMatch[1]}` : '';
 
   statusButtons.forEach(button => {
     button.addEventListener('click', function () {
@@ -11,13 +13,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function updateTaskStatus(taskId, newStatus) {
-    fetch(`/${taskId}/update-status/`, {
+    fetch(`${langPrefix}/${taskId}/update-status/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'X-CSRFToken': getCookie('csrftoken'),
       },
-      body: `status=${newStatus}`
+      body: `status=${encodeURIComponent(newStatus)}`
     })
       .then(response => response.json())
       .then(data => {

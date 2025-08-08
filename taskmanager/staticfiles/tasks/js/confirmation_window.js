@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const deleteButtons = document.querySelectorAll('.delete-task-btn');
   const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
   const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+  const langPrefixMatch = window.location.pathname.match(/^\/(en|ru|uk)(\/|$)/);
+  const langPrefix = langPrefixMatch ? `/${langPrefixMatch[1]}` : '';
 
   deleteButtons.forEach(button => {
     button.addEventListener('click', () => {
@@ -15,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskId = confirmDeleteBtn.getAttribute('data-task-id');
     if (!taskId) return;
 
-    fetch(`/delete/${taskId}/`, {
+    fetch(`${langPrefix}/delete/${taskId}/`, {
       method: 'POST',
       headers: {
         'X-CSRFToken': getCookie('csrftoken'),
