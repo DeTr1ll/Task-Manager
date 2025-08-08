@@ -63,8 +63,6 @@ msgid "Pending"
 msgstr "Очікує"
 
 #: .\tasks\models.py:13
-#, fuzzy
-#| msgid "In Progress"
 msgid "In progress"
 msgstr "Виконується"
 
@@ -111,20 +109,14 @@ msgstr "Ще немаєте акаунту?"
 
 #: .\tasks\templates\tasks\register.html:6
 #: .\tasks\templates\tasks\register.html:14
-#, fuzzy
-#| msgid "Register"
 msgid "Registration"
 msgstr "Реєстрація"
 
 #: .\tasks\templates\tasks\register.html:42
-#, fuzzy
-#| msgid "Password"
 msgid "Confirm Password"
 msgstr "Підтвердіть пароль"
 
 #: .\tasks\templates\tasks\register.html:55
-#, fuzzy
-#| msgid "Don't have an account?"
 msgid "Already have an account?"
 msgstr "Вже маєте акаунт?"
 

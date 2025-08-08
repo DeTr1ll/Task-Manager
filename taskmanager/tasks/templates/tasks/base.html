@@ -1,5 +1,6 @@
 {% load static %}
 {% load i18n %}
+{% load language_url %}
 
 <!DOCTYPE html>
 <html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}">
@@ -17,14 +18,10 @@
 <body class="bg-light">
 
 <nav class="navbar navbar-dark bg-dark mb-4">
-  <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
+  <div class="container position-relative d-flex align-items-center">
 
-    <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
-      <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40">
-    </a>
-
-    <div class="d-flex align-items-center flex-wrap gap-2 ms-auto">
-
+    <!-- Language switcher (левая колонка) - ПК версия -->
+    <div class="col-auto d-none d-lg-block">
       <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle py-1" type="button" id="languageDropdown"
           data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 50px;">
@@ -34,7 +31,83 @@
           {% else %}🌐
           {% endif %}
         </button>
-        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+        <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+          <li>
+            <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path|replace_language_prefix:'en' }}">
+              <input type="hidden" name="language" value="en">
+              <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'en' %}active{% endif %}">🇬🇧 English</button>
+            </form>
+          </li>
+          <li>
+            <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path|replace_language_prefix:'uk' }}">
+              <input type="hidden" name="language" value="uk">
+              <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'uk' %}active{% endif %}">🇺🇦 Українська</button>
+            </form>
+          </li>
+          <li>
+            <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path|replace_language_prefix:'ru' }}">
+              <input type="hidden" name="language" value="ru">
+              <button type="submit" class="btn w-100 {% if request.LANGUAGE_CODE == 'ru' %}active{% endif %}">🇷🇺 Русский</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Логотип по центру на ПК -->
+    <a href="{% url 'task_list' %}" class="position-absolute start-50 translate-middle-x d-none d-lg-flex align-items-center text-decoration-none">
+      <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40">
+    </a>
+
+    <!-- Правая колонка: приветствие и выход - ПК версия -->
+    <div class="col-auto ms-auto d-none d-lg-flex align-items-center gap-2">
+      {% if user.is_authenticated %}
+        <span class="text-white">{% trans "Hello" %}, {{ user.username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="mb-0">
+          {% csrf_token %}
+          <button class="btn btn-danger" type="submit">
+            <i class="bi bi-box-arrow-left"></i> {% trans "Exit" %}
+          </button>
+        </form>
+      {% else %}
+        <a class="btn btn-outline-light" href="{% url 'login' %}">{% trans "Login" %}</a>
+        <a class="btn btn-outline-light" href="{% url 'register' %}">{% trans "Register" %}</a>
+      {% endif %}
+    </div>
+
+  </div>
+
+<!-- Мобильная версия -->
+<div class="d-flex d-lg-none flex-column w-100 px-3 py-2">
+
+  <!-- Первый ряд: логотип слева, справа — переключатель языка и кнопка выхода -->
+  <div class="d-flex justify-content-between align-items-center w-100">
+
+    <!-- Логотип слева -->
+    <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
+      <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="50">
+    </a>
+
+    <!-- Язык + кнопка выхода -->
+    <div class="d-flex align-items-center gap-2">
+
+      <!-- Language dropdown -->
+      <div class="dropdown">
+        <button class="btn btn-secondary btn-lg dropdown-toggle" type="button" id="languageDropdownMobile"
+          data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 60px;">
+          {% if request.LANGUAGE_CODE == 'en' %}🇬🇧
+          {% elif request.LANGUAGE_CODE == 'uk' %}🇺🇦
+          {% elif request.LANGUAGE_CODE == 'ru' %}🇷🇺
+          {% else %}🌐
+          {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdownMobile">
           <li>
             <form action="{% url 'set_language' %}" method="post" class="dropdown-item p-0">
               {% csrf_token %}
@@ -62,23 +135,23 @@
         </ul>
       </div>
 
+      <!-- Кнопка выхода только если пользователь аутентифицирован -->
       {% if user.is_authenticated %}
-        <span class="text-white">{% trans "Hello" %}, {{ user.username }}</span>
-
         <form method="post" action="{% url 'logout' %}" class="mb-0">
           {% csrf_token %}
-          <button class="btn btn-danger" type="submit">
-            <i class="bi bi-box-arrow-left"></i> {% trans "Exit" %}
+          <button class="btn btn-danger btn-lg" type="submit">
+            <i class="bi bi-box-arrow-left"></i>
           </button>
         </form>
-      {% else %}
-        <a class="btn btn-outline-light" href="{% url 'login' %}">{% trans "Login" %}</a>
-        <a class="btn btn-outline-light" href="{% url 'register' %}">{% trans "Register" %}</a>
       {% endif %}
+
     </div>
 
   </div>
+
+</div>
 </nav>
+
 
     <div class="container">
 
