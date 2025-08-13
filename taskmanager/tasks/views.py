@@ -186,7 +186,7 @@ def tag_autocomplete(request):
     return JsonResponse(list(tags), safe=False)
 
 @csrf_exempt
-def webhook(request, token):
+def telegram_webhook(request, token):
     if request.method == "POST":
         if token != TELEGRAM_TOKEN:
             return JsonResponse({"ok": False, "error": "invalid token"}, status=403)
