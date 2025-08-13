@@ -14,17 +14,17 @@ application.add_handler(CallbackQueryHandler(button_callback))
 
 @csrf_exempt
 def telegram_webhook(request, token):
-    if request.method == "POST":
-        if token != TELEGRAM_TOKEN:
-            return JsonResponse({"ok": False, "error": "invalid token"}, status=403)
+    if token != TELEGRAM_TOKEN:
+        return JsonResponse({"ok": False, "error": "Invalid token"}, status=403)
 
-        data = json.loads(request.body)
+    data = json.loads(request.body)
+    update = Update.de_json(data, application.bot)
 
-        # создаем Update с ботом
-        update = Update.de_json(data, application.bot)
+    # Используем синхронный вызов через run_until_complete
+    import asyncio
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(application.process_update(update))
+    loop.close()
 
-        # запускаем обработку обновления
-        application.process_update(update)
-
-        return JsonResponse({"ok": True})
-    return JsonResponse({"ok": False})
+    return JsonResponse({"ok": True})
