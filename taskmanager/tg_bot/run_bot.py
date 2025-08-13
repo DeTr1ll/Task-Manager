@@ -1,19 +1,29 @@
 import os
+import django
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from django.utils.crypto import get_random_string
 from asgiref.sync import sync_to_async
 
+# --- Django setup ---
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+import sys
+sys.path.append(BASE_DIR)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
+django.setup()
+
+# --- Модели ---
 from tasks.models import TelegramProfile
 
+# --- Настройки ---
 FRONTEND_URL = "https://taskino-3hzc.onrender.com"
+BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 
-# Проверка привязки
+# --- Асинхронные функции для работы с БД ---
 @sync_to_async
 def is_linked(chat_id):
     return TelegramProfile.objects.filter(chat_id=chat_id, user__isnull=False).exists()
 
-# Генерация токена
 @sync_to_async
 def create_temp_token(chat_id):
     token = get_random_string(16)
@@ -22,12 +32,11 @@ def create_temp_token(chat_id):
     profile.save()
     return token
 
-# Отвязка профиля
 @sync_to_async
 def unlink_profile(chat_id):
     TelegramProfile.objects.filter(chat_id=chat_id).update(user=None)
 
-# Команда /start
+# --- Хэндлеры ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     linked = await is_linked(chat_id)
@@ -44,7 +53,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Оберіть дію:", reply_markup=reply_markup)
 
-# Обработка кнопок (callback)
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -54,14 +62,24 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await unlink_profile(chat_id)
         await query.edit_message_text("✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки.")
 
-# Запуск бота
+# --- Запуск бота ---
 def main():
-    import os
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not token:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN is not set")
-
-    app = ApplicationBuilder().token(token).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
-    app.run_polling()
+
+    # Webhook
+    port = int(os.environ.get("PORT", 8443))
+    webhook_path = BOT_TOKEN
+    webhook_url = f"{FRONTEND_URL}/webhook/{BOT_TOKEN}/"
+
+    print(f"Запуск Webhook на {webhook_url}")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=port,
+        url_path=webhook_path,
+        webhook_url=webhook_url,
+    )
+
+if __name__ == "__main__":
+    main()
