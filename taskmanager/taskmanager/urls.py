@@ -25,6 +25,7 @@ from django.conf import settings
 from django.views.i18n import set_language
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from tasks import views
+from tg_bot.settings import TELEGRAM_TOKEN
 
 
 def root_redirect(request):
@@ -43,7 +44,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('i18n/setlang/', set_language, name='set_language'),
     path('i18n/', include('django.conf.urls.i18n')),
-    path(f"bot/<str:token>/", views.telegram_webhook, name="webhook"),
+    path(f"bot/{TELEGRAM_TOKEN}/", views.telegram_webhook, name="webhook"),
 ]
 
 urlpatterns += i18n_patterns(
