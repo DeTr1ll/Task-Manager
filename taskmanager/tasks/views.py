@@ -17,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from tg_bot.settings import TELEGRAM_TOKEN
 from telegram import Update
 from tg_bot.main import application
+from asgiref.sync import async_to_sync
 
 from .forms import TaskForm
 from .models import Task, Tag
@@ -189,15 +190,14 @@ def tag_autocomplete(request):
 
 @csrf_exempt
 def telegram_webhook(request, token):
-    if token != TELEGRAM_TOKEN:
+    from telegram import Update
+
+    if token != application.bot.token:
         return JsonResponse({"ok": False, "error": "Invalid token"}, status=403)
 
-    # Достаём данные из запроса
     data = json.loads(request.body)
     update = Update.de_json(data, application.bot)
 
-    # process_update — coroutine, вызываем через asyncio.run (в sync view)
-    import asyncio
-    asyncio.run(application.process_update(update))
-
+    # запускаем синхронно обработку update
+    async_to_sync(application.process_update)(update)
     return JsonResponse({"ok": True})
