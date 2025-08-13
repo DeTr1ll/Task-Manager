@@ -188,12 +188,16 @@ def tag_autocomplete(request):
 
 
 @csrf_exempt
-async def telegram_webhook(request, token):
+def telegram_webhook(request, token):
     if token != TELEGRAM_TOKEN:
         return JsonResponse({"ok": False, "error": "Invalid token"}, status=403)
 
-    data = json.loads(await request.body)
+    # Достаём данные из запроса
+    data = json.loads(request.body)
     update = Update.de_json(data, application.bot)
 
-    await application.process_update(update)  # await безопасно в async view
+    # process_update — coroutine, вызываем через asyncio.run (в sync view)
+    import asyncio
+    asyncio.run(application.process_update(update))
+
     return JsonResponse({"ok": True})
