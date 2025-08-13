@@ -1,11 +1,14 @@
 import os
+import sys
 import django
-import asyncio
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
-from asgiref.sync import sync_to_async
 from django.utils.crypto import get_random_string
+from asgiref.sync import sync_to_async
 
+# Настройка Django
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+sys.path.append(BASE_DIR)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
 django.setup()
 
@@ -48,15 +51,17 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+
     if query.data == "unlink":
         chat_id = query.message.chat.id
         await unlink_profile(chat_id)
-        await query.edit_message_text(
-            "✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки."
-        )
+        await query.edit_message_text("✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки.")
 
-async def main():
+def main():
     app = ApplicationBuilder().token(os.environ["TELEGRAM_BOT_TOKEN"]).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
-    await app.run_polling()
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
