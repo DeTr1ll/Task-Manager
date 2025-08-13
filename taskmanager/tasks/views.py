@@ -7,22 +7,18 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, permissions
-from django.conf import settings
-from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _
-import asyncio, json, os, requests
-from telegram import Bot
-from asgiref.sync import sync_to_async
-from django.utils.timezone import now
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+import json
+import asyncio
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from tg_bot.main import process_update, TELEGRAM_TOKEN
+from telegram import Update
 
 from .forms import TaskForm
-from .models import Task, Tag, TelegramProfile
+from .models import Task, Tag
 from .serializers import TaskSerializer
 
 
@@ -189,116 +185,12 @@ def tag_autocomplete(request):
 
     return JsonResponse(list(tags), safe=False)
 
-
-@login_required
-def confirm_telegram(request):
-    token = request.GET.get("token")
-    chat_id = request.GET.get("chat_id")
-    if not request.user.is_authenticated:
-        query = urlencode({'next': request.get_full_path()})
-        return redirect(f'{settings.LOGIN_URL}?{query}')
-
-    if not token or not chat_id:
-        messages.error(request, _('Invalid link'))
-        return redirect("/")
-
-    try:
-        profile = TelegramProfile.objects.get(temp_token=token)
-    except TelegramProfile.DoesNotExist:
-        messages.error(request, _('Token not found or expired.'))
-        return redirect("/")
-
-    profile.chat_id = chat_id
-    profile.user = request.user
-    profile.temp_token = None
-    profile.save()
-
-    if profile.chat_id:
-        notify_telegram_on_link(profile.chat_id)
-
-    messages.success(request, _('✅ Telegram successfully linked!'))
-    return redirect("/")
-
-
-def notify_telegram_on_link(chat_id: int):
-    token = settings.TELEGRAM_BOT_TOKEN
-    message = _("✅ Telegram successfully linked! You will now receive notifications.")
-
-    keyboard = {
-        "inline_keyboard": [
-            [{"text": _("❌ Unlink Telegram"), "callback_data": "unlink"}]
-        ]
-    }
-
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = {
-        "chat_id": chat_id,
-        "text": message,
-        "reply_markup": keyboard
-    }
-
-    requests.post(url, json=data)
-
-
-
-@csrf_exempt
-async def trigger_deadlines(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Only POST allowed'}, status=405) 
-
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Cron "):
-        return JsonResponse({'error': 'Unauthorized (missing or invalid header)'}, status=403) 
-
-    secret = auth_header.removeprefix("Cron ").strip()
-    cron_secret = os.getenv('CRON_SECRET')
-    if cron_secret is None:
-        return JsonResponse({'error': 'Server misconfiguration: CRON_SECRET not set'}, status=500) 
-
-    if secret != cron_secret:
-        return JsonResponse({'error': 'Unauthorized (bad secret)'}, status=403)
-
-    today = now().date()
-    bot = Bot(token=os.getenv("TELEGRAM_BOT_TOKEN"))
-
-    profiles = await sync_to_async(list)(TelegramProfile.objects.exclude(chat_id=None).select_related("user"))
-
-    for profile in profiles:
-        user = profile.user
-        chat_id = profile.chat_id
-
-        tasks_today = await sync_to_async(list)(Task.objects.filter(user=user, due_date=today).exclude(status='completed'))
-
-        if not tasks_today:
-            continue
-
-        message = "🗓️ *Сьогоднішні дедлайни:*\n\n"
-        for task in tasks_today:
-            if task.due_time:
-                message += f"• {task.title} — 🕓 {task.due_time.strftime('%H:%M')}\n"
-            else:
-                message += f"• {task.title}\n"
-
-                await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
-
-    return JsonResponse({'status': 'ok'})
-
-bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
-app_telegram = ApplicationBuilder().token(bot_token).build()
-
-# обработчик команды /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Привет! Telegram бот работает через webhook.")
-
-app_telegram.add_handler(CommandHandler("start", start))
-
 @csrf_exempt
 def webhook(request, token):
     if request.method == "POST":
-        if token != bot_token:
+        if token != TELEGRAM_TOKEN:
             return JsonResponse({"ok": False, "error": "invalid token"}, status=403)
-        update = Update.de_json(json.loads(request.body), app_telegram.bot)
-        # запускаем обработку update
-        asyncio.run(app_telegram.process_update(update))
+        update = Update.de_json(json.loads(request.body), None)
+        process_update(update)
         return JsonResponse({"ok": True})
     return JsonResponse({"ok": False})

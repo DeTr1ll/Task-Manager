@@ -1,31 +1,18 @@
-import os
-import django
+import asyncio
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
-from django.utils.crypto import get_random_string
+from telegram.ext import ContextTypes
 from asgiref.sync import sync_to_async
-
-# --- Django setup ---
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-import sys
-sys.path.append(BASE_DIR)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
-django.setup()
-
-# --- Модели ---
 from tasks.models import TelegramProfile
-
-# --- Настройки ---
-FRONTEND_URL = "https://taskino-3hzc.onrender.com"
-BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+from .settings import FRONTEND_URL
 
 # --- Асинхронные функции для работы с БД ---
 @sync_to_async
-def is_linked(chat_id):
+def is_linked(chat_id: int) -> bool:
     return TelegramProfile.objects.filter(chat_id=chat_id, user__isnull=False).exists()
 
 @sync_to_async
-def create_temp_token(chat_id):
+def create_temp_token(chat_id: int) -> str:
+    from django.utils.crypto import get_random_string
     token = get_random_string(16)
     profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
     profile.temp_token = token
@@ -33,7 +20,7 @@ def create_temp_token(chat_id):
     return token
 
 @sync_to_async
-def unlink_profile(chat_id):
+def unlink_profile(chat_id: int):
     TelegramProfile.objects.filter(chat_id=chat_id).update(user=None)
 
 # --- Хэндлеры ---
@@ -56,30 +43,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     if query.data == "unlink":
         chat_id = query.message.chat.id
         await unlink_profile(chat_id)
         await query.edit_message_text("✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки.")
-
-# --- Запуск бота ---
-def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_callback))
-
-    # Webhook
-    port = int(os.environ.get("BOT_PORT", 8443))
-    webhook_path = BOT_TOKEN
-    webhook_url = f"{FRONTEND_URL}/webhook/{BOT_TOKEN}/"
-
-    print(f"Запуск Webhook на {webhook_url}")
-    app.run_webhook(
-        listen="0.0.0.0",
-        port=port,
-        url_path=webhook_path,
-        webhook_url=webhook_url,
-    )
-
-if __name__ == "__main__":
-    main()

@@ -25,7 +25,6 @@ from django.conf import settings
 from django.views.i18n import set_language
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from tasks import views
-from tasks.views import webhook
 
 
 def root_redirect(request):
@@ -39,7 +38,6 @@ def root_redirect(request):
 
 urlpatterns = [
     path('', root_redirect, name='root_redirect'),
-    path('api/send-daily/', views.trigger_deadlines, name='trigger_deadlines'),
     path('admin/', admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
