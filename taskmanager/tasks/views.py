@@ -271,8 +271,11 @@ async def trigger_deadlines(request):
 
         message = "🗓️ *Сьогоднішні дедлайни:*\n\n"
         for task in tasks_today:
-            message += f"• {task.title} — 🕓 {task.due_date.strftime('%H:%M')}\n"
+            if task.due_time:
+                message += f"• {task.title} — 🕓 {task.due_time.strftime('%H:%M')}\n"
+            else:
+                message += f"• {task.title}\n"
 
-        await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+                await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
 
     return JsonResponse({'status': 'ok'})

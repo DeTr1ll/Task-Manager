@@ -22,6 +22,7 @@ class Task(models.Model):
         default=STATUS_PENDING
     )
     due_date = models.DateField(null=True, blank=True)
+    due_time = models.TimeField(null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 

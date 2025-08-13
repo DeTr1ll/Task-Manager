@@ -108,15 +108,26 @@
                     {% endif %}
                   </div>
               
-                  <!-- Right part: actions -->
-                  <div class="text-end mt-2 mt-md-0">
-                    <a href="{% url 'task_edit' task.id %}" class="btn btn-sm btn-warning mb-2 w-100">
+                  <!-- ПК версия: кнопки в столбик -->
+                  <div class="text-end mt-2 mt-lg-0 d-none d-lg-block">
+                    <a href="{% url 'task_edit' task.id %}" class="btn btn-warning btn-sm w-100 mb-2">
                       <i class="bi bi-pencil-fill me-1"></i> {% trans "Edit" %}
                     </a>
-                    <button class="btn btn-sm btn-danger w-100 delete-task-btn" data-task-id="{{ task.id }}">
+                    <button class="btn btn-danger btn-sm w-100 delete-task-btn" data-task-id="{{ task.id }}">
                       <i class="bi bi-trash-fill me-1"></i> {% trans "Delete" %}
                     </button>
                   </div>
+                  
+                  <!-- Мобильная версия: кнопки в ряд на всю ширину -->
+                  <div class="d-flex d-lg-none w-100 mt-2 gap-2">
+                    <a href="{% url 'task_edit' task.id %}" class="btn btn-warning flex-fill">
+                      <i class="bi bi-pencil-fill me-1"></i> {% trans "Edit" %}
+                    </a>
+                    <button class="btn btn-danger flex-fill delete-task-btn" data-task-id="{{ task.id }}">
+                      <i class="bi bi-trash-fill me-1"></i> {% trans "Delete" %}
+                    </button>
+                  </div>
+
 
                 </div>
                 {% if task.description %}

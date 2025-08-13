@@ -17,12 +17,13 @@ class TaskForm(forms.ModelForm):
     )
     class Meta:
         model = Task
-        fields = ['title', 'description', 'status', 'due_date']
+        fields = ['title', 'description', 'status', 'due_date', 'due_time']
         labels = {
             'title': _('Task Title'),
             'description': _('Description'),
             'status': _('Status'),
             'due_date': _('Due Date'),
+            'due_time': _('Due Time'),
         }
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
@@ -31,6 +32,9 @@ class TaskForm(forms.ModelForm):
             'due_date': forms.DateInput(
                 attrs={'class': 'form-control', 'type': 'date'},
                 format='%Y-%m-%d'
+            ),
+            'due_time': forms.TimeInput(
+                attrs={'class': 'form-control', 'type': 'time'}
             ),
         }
 

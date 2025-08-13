@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-05 11:32+0300\n"
+"POT-Creation-Date: 2025-08-13 11:38+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,15 +20,15 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: .\taskmanager\settings.py:142
+#: .\taskmanager\settings.py:144
 msgid "English"
 msgstr "English"
 
-#: .\taskmanager\settings.py:143
+#: .\taskmanager\settings.py:145
 msgid "Ukrainian"
 msgstr "Українська"
 
-#: .\taskmanager\settings.py:144
+#: .\taskmanager\settings.py:146
 msgid "Russian"
 msgstr "Русский"
 
@@ -56,8 +56,12 @@ msgstr "Статус"
 msgid "Due Date"
 msgstr "Срок выполнения"
 
-#: .\tasks\models.py:12 .\tasks\templates\tasks\tasks.html:20
-#: .\tasks\templates\tasks\tasks.html:71
+#: .\tasks\forms.py:26
+msgid "Due Time"
+msgstr "Время выполнения"
+
+#: .\tasks\models.py:12 .\tasks\templates\tasks\tasks.html:28
+#: .\tasks\templates\tasks\tasks.html:82
 msgid "Pending"
 msgstr "Ожидает"
 
@@ -65,25 +69,25 @@ msgstr "Ожидает"
 msgid "In progress"
 msgstr "Выполняется"
 
-#: .\tasks\models.py:14 .\tasks\templates\tasks\tasks.html:22
-#: .\tasks\templates\tasks\tasks.html:83
+#: .\tasks\models.py:14 .\tasks\templates\tasks\tasks.html:30
+#: .\tasks\templates\tasks\tasks.html:94
 msgid "Completed"
 msgstr "Выполнено"
 
-#: .\tasks\templates\tasks\base.html:74
+#: .\tasks\templates\tasks\base.html:71
 msgid "Hello"
 msgstr "Привет"
 
-#: .\tasks\templates\tasks\base.html:80
+#: .\tasks\templates\tasks\base.html:75
 msgid "Exit"
 msgstr "Выйти"
 
-#: .\tasks\templates\tasks\base.html:86 .\tasks\templates\tasks\login.html:6
+#: .\tasks\templates\tasks\base.html:79 .\tasks\templates\tasks\login.html:6
 #: .\tasks\templates\tasks\login.html:44
 msgid "Login"
 msgstr "Войти"
 
-#: .\tasks\templates\tasks\base.html:89 .\tasks\templates\tasks\login.html:49
+#: .\tasks\templates\tasks\base.html:80 .\tasks\templates\tasks\login.html:49
 #: .\tasks\templates\tasks\register.html:50
 msgid "Register"
 msgstr "Зарегистрироваться"
@@ -129,7 +133,7 @@ msgid "Edit Task"
 msgstr "Редактировать задачу"
 
 #: .\tasks\templates\tasks\task_form.html:9
-#: .\tasks\templates\tasks\task_form.html:56
+#: .\tasks\templates\tasks\task_form.html:61
 msgid "Create Task"
 msgstr "Создать задачу"
 
@@ -145,12 +149,12 @@ msgstr "Ошибка:"
 msgid "Please fix the errors below."
 msgstr "Пожалуйста, исправьте ошибки ниже."
 
-#: .\tasks\templates\tasks\task_form.html:54
+#: .\tasks\templates\tasks\task_form.html:59
 msgid "Save Changes"
 msgstr "Сохранить изменения"
 
-#: .\tasks\templates\tasks\task_form.html:59
-#: .\tasks\templates\tasks\tasks.html:145
+#: .\tasks\templates\tasks\task_form.html:64
+#: .\tasks\templates\tasks\tasks.html:167
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -158,107 +162,109 @@ msgstr "Отмена"
 msgid "My Tasks"
 msgstr "Мои задачи"
 
-#: .\tasks\templates\tasks\tasks.html:12
+#: .\tasks\templates\tasks\tasks.html:15
 msgid "New Task"
 msgstr "Новая задача"
 
-#: .\tasks\templates\tasks\tasks.html:15
+#: .\tasks\templates\tasks\tasks.html:23
 msgid "Search by title"
 msgstr "Поиск по названию"
 
-#: .\tasks\templates\tasks\tasks.html:19
+#: .\tasks\templates\tasks\tasks.html:27
 msgid "All statuses"
 msgstr "Все статусы"
 
-#: .\tasks\templates\tasks\tasks.html:21 .\tasks\templates\tasks\tasks.html:77
+#: .\tasks\templates\tasks\tasks.html:29 .\tasks\templates\tasks\tasks.html:88
 msgid "In Progress"
 msgstr "Выполняется"
 
-#: .\tasks\templates\tasks\tasks.html:26
+#: .\tasks\templates\tasks\tasks.html:35
 msgid "Apply"
 msgstr "Применить"
 
-#: .\tasks\templates\tasks\tasks.html:54
+#: .\tasks\templates\tasks\tasks.html:65
 msgid "Due by:"
 msgstr "Сделать до:"
 
-#: .\tasks\templates\tasks\tasks.html:62
+#: .\tasks\templates\tasks\tasks.html:73
 msgid "Status:"
 msgstr "Статус:"
 
-#: .\tasks\templates\tasks\tasks.html:103
+#: .\tasks\templates\tasks\tasks.html:114
+#: .\tasks\templates\tasks\tasks.html:124
 msgid "Edit"
 msgstr "Редактировать"
 
-#: .\tasks\templates\tasks\tasks.html:106
-#: .\tasks\templates\tasks\tasks.html:146
+#: .\tasks\templates\tasks\tasks.html:117
+#: .\tasks\templates\tasks\tasks.html:127
+#: .\tasks\templates\tasks\tasks.html:168
 msgid "Delete"
 msgstr "Удалить"
 
-#: .\tasks\templates\tasks\tasks.html:114
+#: .\tasks\templates\tasks\tasks.html:136
 msgid "Description:"
 msgstr "Описание:"
 
-#: .\tasks\templates\tasks\tasks.html:122
+#: .\tasks\templates\tasks\tasks.html:144
 msgid "No tasks found."
 msgstr "Задачи отсутствуют."
 
-#: .\tasks\templates\tasks\tasks.html:129
+#: .\tasks\templates\tasks\tasks.html:151
 msgid "Want to receive notifications in Telegram?"
 msgstr "Хотите получать уведомления в Telegram?"
 
-#: .\tasks\templates\tasks\tasks.html:130
+#: .\tasks\templates\tasks\tasks.html:152
 msgid "Link your account"
 msgstr "Привязать аккаунт"
 
-#: .\tasks\templates\tasks\tasks.html:138
+#: .\tasks\templates\tasks\tasks.html:160
 msgid "Delete Confirmation"
 msgstr "Подтверждение удаления"
 
-#: .\tasks\templates\tasks\tasks.html:139
+#: .\tasks\templates\tasks\tasks.html:161
 msgid "Close"
 msgstr "Закрыть"
 
-#: .\tasks\templates\tasks\tasks.html:142
+#: .\tasks\templates\tasks\tasks.html:164
 msgid "Are you sure you want to delete this task?"
 msgstr "Вы уверены, что хотите удалить эту задачу?"
 
-#: .\tasks\views.py:41
+#: .\tasks\views.py:42
 msgid "Account created. Please log in now."
 msgstr "Аккаунт создан. Пожалуйста, войдите в систему."
 
-#: .\tasks\views.py:110
+#: .\tasks\views.py:111
 msgid "Task successfully created."
 msgstr "Задача успешно создана."
 
-#: .\tasks\views.py:136
+#: .\tasks\views.py:137
 msgid "Task updated."
 msgstr "Задача обновлена."
 
-#: .\tasks\views.py:152
+#: .\tasks\views.py:153
 msgid "Invalid status"
 msgstr "Недопустимый статус"
 
-#: .\tasks\views.py:164
+#: .\tasks\views.py:165
 msgid "Task deleted."
 msgstr "Задача удалена."
 
-#: .\tasks\views.py:198
+#: .\tasks\views.py:199
 msgid "Invalid link"
 msgstr "Недопустимая ссылка"
 
-#: .\tasks\views.py:204
+#: .\tasks\views.py:205
 msgid "Token not found or expired."
 msgstr "Токен не найден или срок его действия истёк."
 
-#: .\tasks\views.py:215
+#: .\tasks\views.py:216
 msgid "✅ Telegram successfully linked!"
 msgstr "✅ Telegram успешно привязан!"
 
-#: .\tasks\views.py:221
+#: .\tasks\views.py:222
 msgid "✅ Telegram successfully linked! You will now receive notifications."
 msgstr "✅ Telegram успешно привязан! Теперь вы будете получать уведомления."
 
-#: .\tasks\views.py:225
+#: .\tasks\views.py:226
 msgid "❌ Unlink Telegram"
 msgstr "❌ Отвязать Telegram"

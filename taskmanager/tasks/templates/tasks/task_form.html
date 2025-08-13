@@ -40,6 +40,11 @@
         {{ form.due_date.label_tag }}
         {{ form.due_date }}
 
+        <div class="mb-3" id="due-time-wrapper" style="display:none;">
+            {{ form.due_time.label_tag }}
+            {{ form.due_time }}
+        </div>
+
         <div class="mb-3 position-relative" style="max-width: 600px;">
             {{ form.tags_input.label_tag }}
             {{ form.tags_input }}
@@ -70,11 +75,32 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const langCode = document.documentElement.lang;
+            const dueDateInput = document.getElementById('id_due_date');
+            const dueTimeWrapper = document.getElementById('due-time-wrapper');
         
-            flatpickr("#id_due_date", {
+            // Показываем поле времени, если дата уже выбрана
+            if (dueDateInput.value) {
+                dueTimeWrapper.style.display = "block";
+            }
+        
+            flatpickr(dueDateInput, {
                 dateFormat: "Y-m-d",
-                locale: (langCode === "uk") ? "uk" :
-                        (langCode === "ru") ? "ru" : "default"
+                locale: (langCode === "uk") ? "uk" : (langCode === "ru") ? "ru" : "default",
+                onChange: function(selectedDates) {
+                    if (selectedDates.length > 0) {
+                        dueTimeWrapper.style.display = "block";
+                    } else {
+                        dueTimeWrapper.style.display = "none";
+                    }
+                }
+            });
+        
+            flatpickr("#id_due_time", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                locale: (langCode === "uk") ? "uk" : (langCode === "ru") ? "ru" : "default"
             });
         });
     </script>

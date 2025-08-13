@@ -53,7 +53,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     linked = await is_linked(chat_id)
 
-    await update.message.reply_text("👋 Вітаємо у Telegram-боті Taskino!")
+    await update.message.reply_text("👋 Вітаємо у Telegram-боті Taskino! ааааааа")
 
     if linked:
         keyboard = [[InlineKeyboardButton("❌ Відв'язати Telegram", callback_data="unlink")]]
