@@ -214,10 +214,13 @@ def confirm_telegram(request):
         return JsonResponse({"ok": False, "error": "Missing token or chat_id"}, status=400)
 
     try:
-        user = User.objects.get(telegram_token=token)  # поле telegram_token нужно добавить в модель User
-    except User.DoesNotExist:
+        profile = TelegramProfile.objects.get(temp_token=token)
+    except TelegramProfile.DoesNotExist:
         return JsonResponse({"ok": False, "error": "Invalid token"}, status=404)
 
-    TelegramProfile.objects.update_or_create(user=user, defaults={"chat_id": chat_id})
+    profile.user_id = request.user.id  # если пользователь авторизован на сайте
+    profile.chat_id = chat_id
+    profile.temp_token = None  # одноразовая ссылка
+    profile.save()
 
     return JsonResponse({"ok": True, "message": "Telegram confirmed"})
