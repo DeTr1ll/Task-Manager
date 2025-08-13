@@ -1,19 +1,22 @@
+import os
 import asyncio
-from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from .settings import TELEGRAM_TOKEN, BOT_PORT
-from . import handlers
+from telegram.ext import Application
+from .handlers import register_handlers
 
-# Создаем приложение бота
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+
 application = Application.builder().token(TELEGRAM_TOKEN).build()
+register_handlers(application)
 
-# Регистрируем хэндлеры
-application.add_handler(CommandHandler("start", handlers.start))
-application.add_handler(CallbackQueryHandler(handlers.button_callback))
+_bot_ready = False
 
-# Функция для обработки update из Django webhook
-async def process_update_async(update: Update):
+async def init_bot():
+    global _bot_ready
+    if not _bot_ready:
+        await application.initialize()
+        await application.start()
+        _bot_ready = True
+
+async def process_update_async(update):
+    await init_bot()
     await application.process_update(update)
-
-def process_update(update: Update):
-    asyncio.run(process_update_async(update))
