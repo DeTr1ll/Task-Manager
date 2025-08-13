@@ -1,25 +1,19 @@
 import os
-import sys
-import django
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from django.utils.crypto import get_random_string
 from asgiref.sync import sync_to_async
 
-# Настройка Django
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-sys.path.append(BASE_DIR)
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "taskmanager.settings")
-django.setup()
-
 from tasks.models import TelegramProfile
 
 FRONTEND_URL = "https://taskino-3hzc.onrender.com"
 
+# Проверка привязки
 @sync_to_async
 def is_linked(chat_id):
     return TelegramProfile.objects.filter(chat_id=chat_id, user__isnull=False).exists()
 
+# Генерация токена
 @sync_to_async
 def create_temp_token(chat_id):
     token = get_random_string(16)
@@ -28,10 +22,12 @@ def create_temp_token(chat_id):
     profile.save()
     return token
 
+# Отвязка профиля
 @sync_to_async
 def unlink_profile(chat_id):
     TelegramProfile.objects.filter(chat_id=chat_id).update(user=None)
 
+# Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     linked = await is_linked(chat_id)
@@ -48,6 +44,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("Оберіть дію:", reply_markup=reply_markup)
 
+# Обработка кнопок (callback)
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -57,11 +54,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await unlink_profile(chat_id)
         await query.edit_message_text("✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки.")
 
+# Запуск бота
 def main():
-    app = ApplicationBuilder().token(os.environ["TELEGRAM_BOT_TOKEN"]).build()
+    import os
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    if not token:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN is not set")
+
+    app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_callback))
     app.run_polling()
-
-if __name__ == "__main__":
-    main()
