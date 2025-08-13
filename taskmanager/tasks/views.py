@@ -1,5 +1,4 @@
 from datetime import timedelta
-import json
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,15 +12,14 @@ from rest_framework import viewsets, permissions
 from django.conf import settings
 from django.utils.http import urlencode
 from django.utils.translation import gettext_lazy as _
-import requests
-import os
+import asyncio, json, os, requests
 from telegram import Bot
 from asgiref.sync import sync_to_async
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
 from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
@@ -285,19 +283,22 @@ async def trigger_deadlines(request):
 
     return JsonResponse({'status': 'ok'})
 
-bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
-dispatcher = Dispatcher(bot, None, workers=0)
+bot_token = os.environ["TELEGRAM_BOT_TOKEN"]
+app_telegram = ApplicationBuilder().token(bot_token).build()
 
-# пример обработчика
-async def start(update, context):
-    await update.message.reply_text("Привет!")
+# обработчик команды /start
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Привет! Telegram бот работает через webhook.")
 
-dispatcher.add_handler(CommandHandler("start", start))
+app_telegram.add_handler(CommandHandler("start", start))
 
 @csrf_exempt
 def webhook(request, token):
     if request.method == "POST":
-        update = Update.de_json(json.loads(request.body), bot)
-        dispatcher.process_update(update)
+        if token != bot_token:
+            return JsonResponse({"ok": False, "error": "invalid token"}, status=403)
+        update = Update.de_json(json.loads(request.body), app_telegram.bot)
+        # запускаем обработку update
+        asyncio.run(app_telegram.process_update(update))
         return JsonResponse({"ok": True})
     return JsonResponse({"ok": False})
