@@ -15,5 +15,5 @@ urlpatterns = [
     path('tags/autocomplete/', views.tag_autocomplete, name='tag_autocomplete'),
     path('', include(router.urls)),
     path("telegram/confirm/", views.confirm_telegram, name="confirm_telegram"),
-    path('webhook/<str:token>/', webhook, name='webhook'),
+    path('webhook/<str:token>/', views.webhook, name='webhook'),
 ]
