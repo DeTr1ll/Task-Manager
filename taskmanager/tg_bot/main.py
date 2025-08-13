@@ -1,32 +1,30 @@
-import os
-import asyncio
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from .handlers import start, button_callback
-from .settings import TELEGRAM_TOKEN
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from tg_bot.settings import TELEGRAM_TOKEN
+from tg_bot.handlers import start, button_callback  # ваши хэндлеры
 
-# Создаём один Application
-application = Application.builder().token(TELEGRAM_TOKEN).build()
-
-# Регистрируем хэндлеры
+# создаём приложение
+application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+# добавляем хэндлеры
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button_callback))
 
-# Флаг готовности
-_bot_ready = False
+@csrf_exempt
+def telegram_webhook(request, token):
+    if request.method == "POST":
+        if token != TELEGRAM_TOKEN:
+            return JsonResponse({"ok": False, "error": "invalid token"}, status=403)
 
-async def init_bot():
-    """Инициализирует бота один раз."""
-    global _bot_ready
-    if not _bot_ready:
-        await application.initialize()
-        await application.start()
-        _bot_ready = True
+        data = json.loads(request.body)
 
-async def process_update_async(update):
-    """Обработка апдейта (вебхук)."""
-    await init_bot()
+        # создаем Update с ботом
+        update = Update.de_json(data, application.bot)
 
-    # Привязка бота к апдейту
-    update._bot = application.bot
+        # запускаем обработку обновления
+        application.process_update(update)
 
-    await application.process_update(update)
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False})
