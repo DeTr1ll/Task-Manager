@@ -25,6 +25,7 @@ from django.conf import settings
 from django.views.i18n import set_language
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from tasks import views
+from tasks.views import webhook
 
 
 def root_redirect(request):

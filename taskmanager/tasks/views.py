@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,6 +18,10 @@ import os
 from telegram import Bot
 from asgiref.sync import sync_to_async
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, CommandHandler
 
 from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
@@ -279,3 +284,20 @@ async def trigger_deadlines(request):
                 await bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
 
     return JsonResponse({'status': 'ok'})
+
+bot = Bot(token=os.environ["TELEGRAM_BOT_TOKEN"])
+dispatcher = Dispatcher(bot, None, workers=0)
+
+# пример обработчика
+async def start(update, context):
+    await update.message.reply_text("Привет!")
+
+dispatcher.add_handler(CommandHandler("start", start))
+
+@csrf_exempt
+def webhook(request, token):
+    if request.method == "POST":
+        update = Update.de_json(json.loads(request.body), bot)
+        dispatcher.process_update(update)
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False})
