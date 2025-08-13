@@ -69,7 +69,7 @@ def main():
     app.add_handler(CallbackQueryHandler(button_callback))
 
     # Webhook
-    port = int(os.environ.get("PORT", 8443))
+    port = int(os.environ.get("BOT_PORT", 8443))
     webhook_path = BOT_TOKEN
     webhook_url = f"{FRONTEND_URL}/webhook/{BOT_TOKEN}/"
 

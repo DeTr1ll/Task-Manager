@@ -17,7 +17,7 @@ subprocess.run(["python", "manage.py", "collectstatic", "--noinput"])
 gunicorn = subprocess.Popen([
     "gunicorn",
     "taskmanager.wsgi:application",
-    "--bind", f"0.0.0.0:{os.environ.get('BOT_PORT', '8000')}"
+    "--bind", f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 ])
 
 # Импорт и запуск бота
