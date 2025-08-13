@@ -1,3 +1,4 @@
+import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 import json
@@ -20,11 +21,7 @@ def telegram_webhook(request, token):
     data = json.loads(request.body)
     update = Update.de_json(data, application.bot)
 
-    # Используем синхронный вызов через run_until_complete
-    import asyncio
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(application.process_update(update))
-    loop.close()
+    # Создаём новый event loop для обработки
+    asyncio.run(application.process_update(update))
 
     return JsonResponse({"ok": True})
