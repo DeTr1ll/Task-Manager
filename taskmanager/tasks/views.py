@@ -18,9 +18,10 @@ from tg_bot.settings import TELEGRAM_TOKEN
 from telegram import Update
 from tg_bot.main import application
 from asgiref.sync import async_to_sync
+from django.contrib.auth import get_user_model
 
 from .forms import TaskForm
-from .models import Task, Tag
+from .models import Task, Tag, TelegramProfile
 from .serializers import TaskSerializer
 
 
@@ -201,3 +202,22 @@ def telegram_webhook(request, token):
     # запускаем синхронно обработку update
     async_to_sync(application.process_update)(update)
     return JsonResponse({"ok": True})
+
+User = get_user_model()
+
+@csrf_exempt
+def confirm_telegram(request):
+    token = request.GET.get("token")
+    chat_id = request.GET.get("chat_id")
+
+    if not token or not chat_id:
+        return JsonResponse({"ok": False, "error": "Missing token or chat_id"}, status=400)
+
+    try:
+        user = User.objects.get(telegram_token=token)  # поле telegram_token нужно добавить в модель User
+    except User.DoesNotExist:
+        return JsonResponse({"ok": False, "error": "Invalid token"}, status=404)
+
+    TelegramProfile.objects.update_or_create(user=user, defaults={"chat_id": chat_id})
+
+    return JsonResponse({"ok": True, "message": "Telegram confirmed"})

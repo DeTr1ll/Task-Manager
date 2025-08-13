@@ -8,6 +8,7 @@ router.register(r'api', views.TaskViewSet, basename='task')
 
 urlpatterns = [
     path('', views.task_list, name='task_list'),
+    path('telegram/confirm', views.confirm_telegram, name='confirm_telegram'),
     path('create/', views.task_create, name='task_create'),
     path('delete/<int:id>/', views.task_delete, name='task_delete'),
     path('edit/<int:id>/', views.task_edit, name='task_edit'),
