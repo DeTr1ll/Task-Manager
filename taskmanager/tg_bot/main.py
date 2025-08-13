@@ -25,4 +25,8 @@ async def init_bot():
 async def process_update_async(update):
     """Обработка апдейта (вебхук)."""
     await init_bot()
+
+    # Привязка бота к апдейту
+    update._bot = application.bot
+
     await application.process_update(update)
