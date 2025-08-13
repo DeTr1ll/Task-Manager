@@ -2,8 +2,7 @@ import os
 import asyncio
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from .handlers import start, button_callback
-
-TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+from .settings import TELEGRAM_TOKEN
 
 # Создаём один Application
 application = Application.builder().token(TELEGRAM_TOKEN).build()
