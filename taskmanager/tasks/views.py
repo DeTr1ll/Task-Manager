@@ -285,7 +285,22 @@ def telegram_webhook(request, token):
         if data == "unlink":
             TelegramProfile.objects.filter(chat_id=chat_id).update(user=None, temp_token=None)
             _answer_callback(bot_token, callback_id, text="Вы отвязаны", show_alert=False)
-            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан.")
+        
+            # отправляем новое сообщение с кнопкой "Привязать"
+            tmp = get_random_string(32)
+            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
+            profile.temp_token = tmp
+            profile.save()
+            frontend = getattr(settings, "FRONTEND_URL", "")
+            link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
+        
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🔗 Привязать Telegram", "url": link}],
+                    [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
+                ]
+            }
+            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан. Нажмите, чтобы привязать снова:", reply_markup=keyboard)
         elif data == "change_lang":
             keyboard = {
                 "inline_keyboard": [
