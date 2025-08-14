@@ -231,34 +231,31 @@ def telegram_webhook(request, token):
     # --- message (текстовые команды) ---
     if "message" in update:
         msg = update["message"]
-        chat = msg.get("chat", {})
-        chat_id = chat.get("id")
+        chat_id = msg.get("chat", {}).get("id")
         text = (msg.get("text") or "").strip()
-
+        
         if not chat_id:
             return JsonResponse({"ok": True})
-
+    
+        # всегда генерируем temp_token
+        tmp = get_random_string(32)
+        profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
+        profile.temp_token = tmp
+        profile.save()
+        frontend = getattr(settings, "FRONTEND_URL", "")
+    
         if text.startswith("/start"):
-            # одинразовая temp ссылка: сохраняем в профиле
-            tmp = get_random_string(32)
-            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
-            profile.temp_token = tmp
-            profile.save()
-
             if profile.user:
                 # уже привязан
                 keyboard = {
                     "inline_keyboard": [
-                        [
-                            {"text": "❌ Отвязать", "callback_data": "unlink"},
-                            {"text": "🌐 Сменить язык", "callback_data": "change_lang"}
-                        ]
+                        [{"text": "❌ Отвязать", "callback_data": "unlink"}],
+                        [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
                     ]
                 }
                 _send_message(bot_token, chat_id, "Вы уже привязаны. Выберите действие:", reply_markup=keyboard)
             else:
-                # не привязан: даём ссылку на сайт для подтверждения
-                frontend = getattr(settings, "FRONTEND_URL", "")
+                # не привязан
                 link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
                 keyboard = {
                     "inline_keyboard": [
@@ -267,7 +264,7 @@ def telegram_webhook(request, token):
                     ]
                 }
                 _send_message(bot_token, chat_id, "Привет! Нажмите, чтобы привязать аккаунт:", reply_markup=keyboard)
-        # можно обработать и другие текстовые команды
+    
         return JsonResponse({"ok": True})
 
     # --- callback_query (нажатия inline-кнопок) ---
@@ -285,7 +282,7 @@ def telegram_webhook(request, token):
         if data == "unlink":
             TelegramProfile.objects.filter(chat_id=chat_id).update(user=None, temp_token=None)
             _answer_callback(bot_token, callback_id, text="Вы отвязаны", show_alert=False)
-        
+
             # отправляем новое сообщение с кнопкой "Привязать"
             tmp = get_random_string(32)
             profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
@@ -293,7 +290,7 @@ def telegram_webhook(request, token):
             profile.save()
             frontend = getattr(settings, "FRONTEND_URL", "")
             link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
-        
+
             keyboard = {
                 "inline_keyboard": [
                     [{"text": "🔗 Привязать Telegram", "url": link}],
