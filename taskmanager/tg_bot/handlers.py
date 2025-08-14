@@ -1,8 +1,9 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import ContextTypes
 from asgiref.sync import sync_to_async
 from tasks.models import TelegramProfile
 from .settings import FRONTEND_URL
+from django.utils.crypto import get_random_string
 
 # --- Асинхронные функции для работы с БД ---
 @sync_to_async
@@ -11,8 +12,7 @@ def is_linked(chat_id: int) -> bool:
 
 @sync_to_async
 def create_temp_token(chat_id: int) -> str:
-    from django.utils.crypto import get_random_string
-    token = get_random_string(16)
+    token = get_random_string(32)
     profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
     profile.temp_token = token
     profile.save()
@@ -27,22 +27,34 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     linked = await is_linked(chat_id)
 
-    await update.message.reply_text("👋 Вітаємо у Telegram-боті Taskino!")
-
     if linked:
-        keyboard = [[InlineKeyboardButton("❌ Відв'язати Telegram", callback_data="unlink")]]
+        button1 = KeyboardButton("Отвязать")
     else:
+        button1 = KeyboardButton("Привязать")
+
+    button2 = KeyboardButton("Сменить язык")
+    keyboard = ReplyKeyboardMarkup([[button1, button2]], resize_keyboard=True)
+
+    await update.message.reply_text("👋 Вітаємо у Telegram-боті Taskino!")
+    await update.message.reply_text(
+        "Выберите действие:",
+        reply_markup=keyboard
+    )
+
+async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    text = update.message.text.strip()
+
+    if text == "Привязать":
         token = await create_temp_token(chat_id)
         link = f"{FRONTEND_URL}/telegram/confirm?token={token}&chat_id={chat_id}"
-        keyboard = [[InlineKeyboardButton("🔗 Прив'язати Telegram", url=link)]]
+        await update.message.reply_text(
+            f"Нажмите для привязки: {link}"
+        )
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Оберіть дію:", reply_markup=reply_markup)
-
-async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data == "unlink":
-        chat_id = query.message.chat.id
+    elif text == "Отвязать":
         await unlink_profile(chat_id)
-        await query.edit_message_text("✅ Telegram успішно відв'язано.\n\nНадішліть /start для повторної прив'язки.")
+        await update.message.reply_text("✅ Аккаунт отвязан. Введите /start для обновления кнопок.")
+
+    elif text == "Сменить язык":
+        await update.message.reply_text("Выберите язык: 🇷🇺 Русский, 🇺🇸 English, ...")
