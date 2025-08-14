@@ -9,16 +9,13 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from rest_framework import viewsets, permissions
 from django.utils.translation import gettext_lazy as _
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
 import json
-import asyncio
+import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from tg_bot.settings import TELEGRAM_TOKEN
-from telegram import Update
-from tg_bot.main import application
-from asgiref.sync import async_to_sync
-from django.contrib.auth import get_user_model
+from django.utils.crypto import get_random_string
 
 from .forms import TaskForm
 from .models import Task, Tag, TelegramProfile
@@ -189,38 +186,159 @@ def tag_autocomplete(request):
     return JsonResponse(list(tags), safe=False)
 
 
+TELEGRAM_API = lambda token: f"https://api.telegram.org/bot{token}"
+
+def _send_message(token, chat_id, text, reply_markup=None, parse_mode=None):
+    payload = {"chat_id": chat_id, "text": text}
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+    if parse_mode:
+        payload["parse_mode"] = parse_mode
+    try:
+        requests.post(f"{TELEGRAM_API(token)}/sendMessage", json=payload, timeout=10)
+    except Exception as e:
+        # при желании логировать
+        print("send_message error:", e)
+
+def _answer_callback(token, callback_query_id, text=None, show_alert=False):
+    payload = {"callback_query_id": callback_query_id, "show_alert": show_alert}
+    if text:
+        payload["text"] = text
+    try:
+        requests.post(f"{TELEGRAM_API(token)}/answerCallbackQuery", json=payload, timeout=10)
+    except Exception as e:
+        print("answer_callback error:", e)
+
 @csrf_exempt
 def telegram_webhook(request, token):
-    from telegram import Update
+    """
+    URL: /bot/<TOKEN>/
+    Telegram will POST updates here.
+    Мы НЕ используем Application.process_update — обрабатываем update вручную и отправляем ответы через requests.
+    """
+    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
+    if token != bot_token:
+        return HttpResponseForbidden("Invalid token")
 
-    if token != application.bot.token:
-        return JsonResponse({"ok": False, "error": "Invalid token"}, status=403)
+    if request.method != "POST":
+        return JsonResponse({"ok": True})
 
-    data = json.loads(request.body)
-    update = Update.de_json(data, application.bot)
+    try:
+        update = json.loads(request.body)
+    except Exception:
+        return JsonResponse({"ok": False}, status=400)
 
-    # запускаем синхронно обработку update
-    async_to_sync(application.process_update)(update)
+    # --- message (текстовые команды) ---
+    if "message" in update:
+        msg = update["message"]
+        chat = msg.get("chat", {})
+        chat_id = chat.get("id")
+        text = (msg.get("text") or "").strip()
+
+        if not chat_id:
+            return JsonResponse({"ok": True})
+
+        if text.startswith("/start"):
+            # одинразовая temp ссылка: сохраняем в профиле
+            tmp = get_random_string(32)
+            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
+            profile.temp_token = tmp
+            profile.save()
+
+            if profile.user:
+                # уже привязан
+                keyboard = {
+                    "inline_keyboard": [
+                        [
+                            {"text": "❌ Отвязать", "callback_data": "unlink"},
+                            {"text": "🌐 Сменить язык", "callback_data": "change_lang"}
+                        ]
+                    ]
+                }
+                _send_message(bot_token, chat_id, "Вы уже привязаны. Выберите действие:", reply_markup=keyboard)
+            else:
+                # не привязан: даём ссылку на сайт для подтверждения
+                frontend = getattr(settings, "FRONTEND_URL", "")
+                link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
+                keyboard = {
+                    "inline_keyboard": [
+                        [{"text": "🔗 Привязать Telegram", "url": link}],
+                        [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
+                    ]
+                }
+                _send_message(bot_token, chat_id, "Привет! Нажмите, чтобы привязать аккаунт:", reply_markup=keyboard)
+        # можно обработать и другие текстовые команды
+        return JsonResponse({"ok": True})
+
+    # --- callback_query (нажатия inline-кнопок) ---
+    if "callback_query" in update:
+        cq = update["callback_query"]
+        data = cq.get("data", "")
+        callback_id = cq.get("id")
+        message = cq.get("message") or {}
+        chat = message.get("chat") or {}
+        chat_id = chat.get("id")
+        if not chat_id:
+            _answer_callback(bot_token, callback_id, text="Ошибка: не найден chat_id", show_alert=True)
+            return JsonResponse({"ok": True})
+
+        if data == "unlink":
+            TelegramProfile.objects.filter(chat_id=chat_id).update(user=None, temp_token=None)
+            _answer_callback(bot_token, callback_id, text="Вы отвязаны", show_alert=False)
+            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан.")
+        elif data == "change_lang":
+            keyboard = {
+                "inline_keyboard": [
+                    [{"text": "🇬🇧 English", "callback_data": "lang:en"}],
+                    [{"text": "🇺🇦 Українська", "callback_data": "lang:uk"}],
+                    [{"text": "🇷🇺 Русский", "callback_data": "lang:ru"}],
+                ]
+            }
+            _answer_callback(bot_token, callback_id)
+            _send_message(bot_token, chat_id, "Выберите язык:", reply_markup=keyboard)
+        elif data.startswith("lang:"):
+            lang = data.split(":", 1)[1]
+            # здесь можно сохранять выбор в профиле или просто информировать
+            _answer_callback(bot_token, callback_id, text=f"Язык выбран: {lang}", show_alert=True)
+            _send_message(bot_token, chat_id, f"Язык установлен: {lang}. Откройте сайт и проверьте.")
+        else:
+            _answer_callback(bot_token, callback_id, text="Неизвестная команда", show_alert=True)
+
+        return JsonResponse({"ok": True})
+
     return JsonResponse({"ok": True})
 
-User = get_user_model()
 
 @csrf_exempt
 def confirm_telegram(request):
+    """
+    Ссылка, на которую ведёт кнопка «Привязать» в боте.
+    Если пользователь не залогинен — редиректим на логин и сохраняем токен в сессии.
+    После логина пользователь может вернуться на этот URL и мы привяжем аккаунт.
+    """
     token = request.GET.get("token")
     chat_id = request.GET.get("chat_id")
-
     if not token or not chat_id:
-        return JsonResponse({"ok": False, "error": "Missing token or chat_id"}, status=400)
+        messages.error(request, "Invalid link")
+        return redirect("/")
 
     try:
-        profile = TelegramProfile.objects.get(temp_token=token)
+        profile = TelegramProfile.objects.get(temp_token=token, chat_id=chat_id)
     except TelegramProfile.DoesNotExist:
-        return JsonResponse({"ok": False, "error": "Invalid token"}, status=404)
+        messages.error(request, "Invalid or expired token")
+        return redirect("/")
 
-    profile.user_id = request.user.id  # если пользователь авторизован на сайте
-    profile.chat_id = chat_id
-    profile.temp_token = None  # одноразовая ссылка
+    if not request.user.is_authenticated:
+        # сохраним данные в сессии и редирект на логин (next оставим на тот же URL)
+        request.session['tg_confirm_token'] = token
+        request.session['tg_confirm_chat'] = chat_id
+        return redirect(f"{settings.LOGIN_URL}?next={request.get_full_path()}")
+
+    # Если пользователь залогинен — связываем профиль
+    # Удаляем связь того же chat_id у других записей (на всякий случай)
+    TelegramProfile.objects.filter(chat_id=chat_id).exclude(pk=profile.pk).update(user=None)
+    profile.user = request.user
+    profile.temp_token = None
     profile.save()
-
-    return JsonResponse({"ok": True, "message": "Telegram confirmed"})
+    messages.success(request, "✅ Telegram successfully linked!")
+    return redirect("/")

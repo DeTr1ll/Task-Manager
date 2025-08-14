@@ -1,9 +1,10 @@
 from telegram import Update, ReplyKeyboardMarkup, KeyboardButton
-from telegram.ext import ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from asgiref.sync import sync_to_async
 from tasks.models import TelegramProfile
-from .settings import FRONTEND_URL
+from .settings import FRONTEND_URL, TELEGRAM_TOKEN
 from django.utils.crypto import get_random_string
+import asyncio
 
 # --- Асинхронные функции для работы с БД ---
 @sync_to_async
@@ -58,3 +59,4 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif text == "Сменить язык":
         await update.message.reply_text("Выберите язык: 🇷🇺 Русский, 🇺🇸 English, ...")
+

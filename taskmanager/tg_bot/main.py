@@ -1,13 +1,14 @@
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler
-from .settings import TELEGRAM_TOKEN
-from .handlers import start, button_callback
-import asyncio
+from decouple import config
+import requests
 
-# Создаем приложение
-application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+TOKEN = config("TELEGRAM_BOT_TOKEN")
+if not TOKEN:
+    raise RuntimeError("TELEGRAM_BOT_TOKEN not set")
 
-# Добавляем хэндлеры
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(button_callback))
+WEBHOOK_URL = config("WEBHOOK_URL") or f"https://{config('RENDER_EXTERNAL_HOSTNAME')}/bot/{TOKEN}/"
 
-asyncio.get_event_loop().run_until_complete(application.initialize())
+print("Setting webhook to", WEBHOOK_URL)
+r = requests.post(f"https://api.telegram.org/bot{TOKEN}/setWebhook", json={"url": WEBHOOK_URL, "allowed_updates": ["message", "callback_query"]}, timeout=15)
+print(r.status_code, r.text)
+r.raise_for_status()
+print("Webhook set")
