@@ -188,17 +188,15 @@ def tag_autocomplete(request):
 
 TELEGRAM_API = lambda token: f"https://api.telegram.org/bot{token}"
 
-def _send_message(token, chat_id, text, reply_markup=None, parse_mode=None):
-    payload = {"chat_id": chat_id, "text": text}
-    if reply_markup is not None:
-        payload["reply_markup"] = reply_markup
-    if parse_mode:
-        payload["parse_mode"] = parse_mode
-    try:
-        requests.post(f"{TELEGRAM_API(token)}/sendMessage", json=payload, timeout=10)
-    except Exception as e:
-        # при желании логировать
-        print("send_message error:", e)
+def _send_message(token, chat_id, text, reply_markup=None):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+    }
+    if reply_markup:
+        payload["reply_markup"] = json.dumps(reply_markup)
+    requests.post(url, json=payload)
 
 def _answer_callback(token, callback_query_id, text=None, show_alert=False):
     payload = {"callback_query_id": callback_query_id, "show_alert": show_alert}
@@ -211,11 +209,6 @@ def _answer_callback(token, callback_query_id, text=None, show_alert=False):
 
 @csrf_exempt
 def telegram_webhook(request, token):
-    """
-    URL: /bot/<TOKEN>/
-    Telegram will POST updates here.
-    Мы НЕ используем Application.process_update — обрабатываем update вручную и отправляем ответы через requests.
-    """
     bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
     if token != bot_token:
         return HttpResponseForbidden("Invalid token")
@@ -231,32 +224,33 @@ def telegram_webhook(request, token):
     # --- message (текстовые команды) ---
     if "message" in update:
         msg = update["message"]
-        chat_id = msg.get("chat", {}).get("id")
+        chat = msg.get("chat", {})
+        chat_id = chat.get("id")
         text = (msg.get("text") or "").strip()
-        
         if not chat_id:
             return JsonResponse({"ok": True})
-    
-        # всегда генерируем temp_token
-        tmp = get_random_string(32)
-        profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
-        profile.temp_token = tmp
-        profile.save()
-        frontend = getattr(settings, "FRONTEND_URL", "")
-    
+
         if text.startswith("/start"):
+            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
+            tmp_token = get_random_string(32)
+            profile.temp_token = tmp_token
+            profile.save()
+
             if profile.user:
                 # уже привязан
                 keyboard = {
                     "inline_keyboard": [
-                        [{"text": "❌ Отвязать", "callback_data": "unlink"}],
-                        [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
+                        [
+                            {"text": "❌ Отвязать", "callback_data": "unlink"},
+                            {"text": "🌐 Сменить язык", "callback_data": "change_lang"}
+                        ]
                     ]
                 }
                 _send_message(bot_token, chat_id, "Вы уже привязаны. Выберите действие:", reply_markup=keyboard)
             else:
                 # не привязан
-                link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
+                frontend = getattr(settings, "FRONTEND_URL", "")
+                link = f"{frontend}/telegram/confirm?token={tmp_token}&chat_id={chat_id}"
                 keyboard = {
                     "inline_keyboard": [
                         [{"text": "🔗 Привязать Telegram", "url": link}],
@@ -264,7 +258,7 @@ def telegram_webhook(request, token):
                     ]
                 }
                 _send_message(bot_token, chat_id, "Привет! Нажмите, чтобы привязать аккаунт:", reply_markup=keyboard)
-    
+
         return JsonResponse({"ok": True})
 
     # --- callback_query (нажатия inline-кнопок) ---
@@ -276,28 +270,11 @@ def telegram_webhook(request, token):
         chat = message.get("chat") or {}
         chat_id = chat.get("id")
         if not chat_id:
-            _answer_callback(bot_token, callback_id, text="Ошибка: не найден chat_id", show_alert=True)
             return JsonResponse({"ok": True})
 
         if data == "unlink":
             TelegramProfile.objects.filter(chat_id=chat_id).update(user=None, temp_token=None)
-            _answer_callback(bot_token, callback_id, text="Вы отвязаны", show_alert=False)
-
-            # отправляем новое сообщение с кнопкой "Привязать"
-            tmp = get_random_string(32)
-            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
-            profile.temp_token = tmp
-            profile.save()
-            frontend = getattr(settings, "FRONTEND_URL", "")
-            link = f"{frontend}/telegram/confirm?token={tmp}&chat_id={chat_id}"
-
-            keyboard = {
-                "inline_keyboard": [
-                    [{"text": "🔗 Привязать Telegram", "url": link}],
-                    [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
-                ]
-            }
-            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан. Нажмите, чтобы привязать снова:", reply_markup=keyboard)
+            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан.")
         elif data == "change_lang":
             keyboard = {
                 "inline_keyboard": [
@@ -306,20 +283,16 @@ def telegram_webhook(request, token):
                     [{"text": "🇷🇺 Русский", "callback_data": "lang:ru"}],
                 ]
             }
-            _answer_callback(bot_token, callback_id)
             _send_message(bot_token, chat_id, "Выберите язык:", reply_markup=keyboard)
         elif data.startswith("lang:"):
             lang = data.split(":", 1)[1]
-            # здесь можно сохранять выбор в профиле или просто информировать
-            _answer_callback(bot_token, callback_id, text=f"Язык выбран: {lang}", show_alert=True)
             _send_message(bot_token, chat_id, f"Язык установлен: {lang}. Откройте сайт и проверьте.")
         else:
-            _answer_callback(bot_token, callback_id, text="Неизвестная команда", show_alert=True)
+            _send_message(bot_token, chat_id, "Неизвестная команда")
 
         return JsonResponse({"ok": True})
 
     return JsonResponse({"ok": True})
-
 
 @csrf_exempt
 def confirm_telegram(request):
