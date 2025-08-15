@@ -20,14 +20,17 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from django.utils.translation import get_language_from_request, get_supported_language_variant
-from django.conf import settings
+from django.utils.translation import (
+    get_language_from_request,
+    get_supported_language_variant,
+)
 from django.views.i18n import set_language
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from tasks import views
 
 
 def root_redirect(request):
+    """Redirect root URL to language-specific home page."""
     lang = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
     try:
         lang = get_supported_language_variant(lang)
@@ -35,6 +38,7 @@ def root_redirect(request):
         lang = get_language_from_request(request, check_path=False)
 
     return HttpResponseRedirect(f'/{lang}/' if lang else '/en/')
+
 
 urlpatterns = [
     path('', root_redirect, name='root_redirect'),
@@ -48,6 +52,14 @@ urlpatterns = [
 urlpatterns += i18n_patterns(
     path('', include('tasks.urls')),
     path('register/', views.register, name='register'),
-    path('login/', auth_views.LoginView.as_view(template_name='tasks/login.html'), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path(
+        'login/',
+        auth_views.LoginView.as_view(template_name='tasks/login.html'),
+        name='login',
+    ),
+    path(
+        'logout/',
+        auth_views.LogoutView.as_view(next_page='login'),
+        name='logout',
+    ),
 )

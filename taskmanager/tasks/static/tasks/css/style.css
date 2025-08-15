@@ -1,15 +1,13 @@
-/* Убираем обводку и фон кнопки */
 #languageDropdown {
     border-radius: 0.5rem;
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
     color: white;
-    font-size: 1.6rem; /* размер флага */
+    font-size: 1.6rem;
     cursor: pointer;
 }
 
-/* Делаем стрелочку белой */
 #languageDropdown::after {
     display: inline-block;
     margin-left: 0.3em;
@@ -21,14 +19,12 @@
     filter: none !important;
 }
 
-/* При наведении подсветка */
 #languageDropdown:hover,
 #languageDropdown:focus {
     background-color: rgba(255, 255, 255, 0.1) !important;
     outline: none !important;
 }
 
-/* Убираем паддинги у кнопок внутри выпадающего меню */
 .dropdown-menu .btn {
     padding: 0.25rem 1rem;
     font-size: 1rem;
@@ -40,14 +36,12 @@
     text-align: left;
 }
 
-/* Подсвечиваем выбранный язык */
 .dropdown-menu .btn.active,
 .dropdown-menu .btn:hover {
     background-color: #0d6efd;
     color: white;
 }
 
-/* Подгоняем размер иконок флагов в меню */
 .dropdown-menu .btn span {
     font-size: 1.2rem;
     margin-right: 0.5rem;

@@ -10,10 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 from datetime import timedelta
-from decouple import config
-from pathlib import Path
-import dj_database_url
 import os
+from pathlib import Path
+
+from decouple import config
+from django.utils.translation import gettext_lazy as _
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -137,8 +139,6 @@ USE_TZ = True
 
 LANGUAGE_COOKIE_NAME = 'django_language'
 LANGUAGE_COOKIE_AGE = 60 * 60 * 24 * 365 # 1 year
-
-from django.utils.translation import gettext_lazy as _
 
 LANGUAGES = [
     ('en', _('English')),

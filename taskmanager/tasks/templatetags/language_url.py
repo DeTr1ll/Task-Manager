@@ -1,19 +1,28 @@
-from django import template
+"""Custom template filters for language URL handling."""
+
 import re
+from django import template
 
 register = template.Library()
 
+
 @register.filter
 def replace_language_prefix(path, lang_code):
-    # Паттерн для языкового префикса: /en/, /uk/, /ru/
+    """
+    Replace or add the language prefix in a given URL path.
+
+    Args:
+        path (str): Original URL path.
+        lang_code (str): Language code to insert (e.g., 'en', 'uk', 'ru').
+
+    Returns:
+        str: Updated URL path with the specified language prefix.
+    """
     pattern = r'^/(en|uk|ru)(/|$)'
 
-    # Если путь начинается с языкового префикса — заменяем на новый
     if re.match(pattern, path):
         return re.sub(pattern, f'/{lang_code}/', path)
     else:
-        # Иначе добавляем префикс (если это не корень)
         if path == '/':
             return f'/{lang_code}/'
-        else:
-            return f'/{lang_code}{path}'
+        return f'/{lang_code}{path}'

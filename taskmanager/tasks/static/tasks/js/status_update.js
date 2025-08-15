@@ -57,10 +57,8 @@ document.addEventListener('DOMContentLoaded', function () {
     buttons.forEach(btn => {
       const btnStatus = btn.getAttribute('data-status');
 
-      // Удаляем все возможные классы
       Object.values(statusClasses).flat().forEach(cls => btn.classList.remove(cls));
 
-      // Назначаем новый класс
       if (btnStatus === newStatus) {
         btn.classList.add(statusClasses[btnStatus][0]);
       } else {
@@ -104,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
     const hasDueDate = Boolean(dueDateStr);
     const taskDueDate = hasDueDate ? new Date(dueDateStr) : null;
-    if (taskDueDate) taskDueDate.setHours(0, 0, 0, 0); // сброс времени
+    if (taskDueDate) taskDueDate.setHours(0, 0, 0, 0);
     
     if (newStatus === 'completed') {
       listGroup.appendChild(taskElement);
@@ -124,9 +122,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const elDueDateStr = el.getAttribute('data-due-date');
       const elHasDueDate = Boolean(elDueDateStr);
       const elDueDate = elHasDueDate ? new Date(elDueDateStr) : null;
-      if (elDueDate) elDueDate.setHours(0, 0, 0, 0); // сброс времени
+      if (elDueDate) elDueDate.setHours(0, 0, 0, 0);
     
-      // Логика вставки
       if (hasDueDate && !elHasDueDate) {
         listGroup.insertBefore(taskElement, el);
         inserted = true;

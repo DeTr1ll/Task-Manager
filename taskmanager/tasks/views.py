@@ -1,3 +1,8 @@
+"""
+Views for task management: task CRUD, user registration,
+tags autocomplete, and AJAX status update.
+"""
+
 from datetime import timedelta
 
 from django.contrib import messages
@@ -17,17 +22,21 @@ from .serializers import TaskSerializer
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """DRF viewset for Task model."""
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Return tasks for the current authenticated user."""
         return Task.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        """Save the task with the current user as owner."""
         serializer.save(user=self.request.user)
 
 
 def register(request):
+    """Register a new user account."""
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -42,22 +51,23 @@ def register(request):
 
 @login_required
 def task_list(request):
-    tasks = Task.objects.filter(user=request.user)
+    """Display list of tasks with optional filtering and search."""
+    tasks_queryset = Task.objects.filter(user=request.user)
     today = timezone.localdate()
 
     status_filter = request.GET.get('status')
     query = request.GET.get('q')
 
     if status_filter:
-        tasks = tasks.filter(status=status_filter)
+        tasks_queryset = tasks_queryset.filter(status=status_filter)
 
     if query:
-        tasks = tasks.filter(
+        tasks_queryset = tasks_queryset.filter(
             Q(title__icontains=query) |
             Q(tags__name__icontains=query)
         ).distinct()
 
-    tasks = tasks.annotate(
+    tasks_queryset = tasks_queryset.annotate(
         completed_order=Case(
             When(status='completed', then=Value(1)),
             default=Value(0),
@@ -65,8 +75,8 @@ def task_list(request):
         )
     ).order_by('completed_order', 'due_date', '-created_at')
 
-    task_list = list(tasks)
-    for task in task_list:
+    tasks_list = list(tasks_queryset)
+    for task in tasks_list:
         if task.status == 'completed':
             task.card_highlight = 'list-group-item-success'
             task.due_highlight = 'text-muted'
@@ -88,7 +98,7 @@ def task_list(request):
         request,
         'tasks/tasks.html',
         {
-            'tasks': task_list,
+            'tasks': tasks_list,
             'status_filter': status_filter,
             'query': query,
         },
@@ -97,6 +107,7 @@ def task_list(request):
 
 @login_required
 def task_create(request):
+    """Create a new task."""
     if request.method == 'POST':
         form = TaskForm(request.POST, user=request.user)
         if form.is_valid():
@@ -129,8 +140,9 @@ def task_create(request):
 
 
 @login_required
-def task_edit(request, id):
-    task = get_object_or_404(Task, id=id, user=request.user)
+def task_edit(request, task_id):
+    """Edit an existing task."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
 
     if request.method == 'POST':
         form = TaskForm(request.POST, instance=task, user=request.user)
@@ -163,8 +175,9 @@ def task_edit(request, id):
 
 @login_required
 @require_POST
-def task_update_status_ajax(request, id):
-    task = get_object_or_404(Task, id=id, user=request.user)
+def task_update_status_ajax(request, task_id):
+    """Update task status via AJAX request."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
     new_status = request.POST.get('status')
 
     valid_statuses = ['pending', 'in_progress', 'completed']
@@ -184,10 +197,11 @@ def task_update_status_ajax(request, id):
     )
 
 
-@require_POST
 @login_required
-def task_delete(request, id):
-    task = get_object_or_404(Task, id=id, user=request.user)
+@require_POST
+def task_delete(request, task_id):
+    """Delete a task."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
     task.delete()
     messages.warning(
         request,
@@ -197,6 +211,7 @@ def task_delete(request, id):
 
 
 def handle_tags_input(tags_str, user):
+    """Process comma-separated tags string and return Tag objects."""
     tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
     tags = []
     for name in tag_names:
@@ -207,6 +222,7 @@ def handle_tags_input(tags_str, user):
 
 @login_required
 def tag_autocomplete(request):
+    """Return JSON list of tag names matching the search term."""
     term = request.GET.get('term', '')
     user = request.user if request.user.is_authenticated else None
     tags = []

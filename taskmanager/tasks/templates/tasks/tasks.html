@@ -9,14 +9,12 @@
     <h2 class="mb-4 text-center"><i class="bi bi-stickies-fill"></i> {% trans "My Tasks" %}</h2>
 
 <div class="row mb-4 align-items-center">
-  <!-- Левая колонка: New Task -->
   <div class="col-12 col-md-auto mb-2 mb-md-0">
     <a href="{% url 'task_create' %}" class="btn btn-primary w-100 w-md-auto">
       <i class="bi bi-plus-lg"></i> {% trans "New Task" %}
     </a>
   </div>
 
-  <!-- Правая колонка: форма поиска -->
   <div class="col-12 col-md">
     <form method="get" class="row g-2">
       <div class="col-12 col-sm-6 col-md-7">
@@ -52,10 +50,8 @@
                 style="cursor: pointer;"
               >
                 <div class="d-flex justify-content-between flex-wrap">
-                  <!-- Left part: info -->
                   <div class="flex-grow-1 me-3">
 
-                    <!-- Title + Due date -->
                     <div class="d-flex justify-content-between align-items-center">
                       <h5 class="mb-1">
                         <i class="bi bi-sticky-fill text-primary me-1"></i>{{ task.title }}
@@ -66,15 +62,13 @@
                         </div>
                       {% endif %}
                     </div>
-                
-                    <!-- Status -->
+
                     <div class="mb-2">
                       <small class="text-muted">
                         <i class="bi bi-info-circle me-1"></i>{% trans "Status:" %} <strong class="status-display">{{ task.get_status_display }}</strong>
                       </small>
                     </div>
-                
-                    <!-- Status buttons -->
+
                     <div class="btn-group status-btns mb-2" data-task-id="{{ task.id }}">
                       <button type="button"
                               class="btn btn-sm {% if task.status == 'pending' %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
@@ -95,8 +89,7 @@
                         <i class="bi bi-check-circle-fill"></i>
                       </button>
                     </div>
-                
-                    <!-- Tags -->
+
                     {% if task.tags.all %}
                       <div class="mt-1">
                         {% for tag in task.tags.all %}
@@ -107,8 +100,7 @@
                       </div>
                     {% endif %}
                   </div>
-              
-                  <!-- ПК версия: кнопки в столбик -->
+
                   <div class="text-end mt-2 mt-lg-0 d-none d-lg-block">
                     <a href="{% url 'task_edit' task.id %}" class="btn btn-warning btn-sm w-100 mb-2">
                       <i class="bi bi-pencil-fill me-1"></i> {% trans "Edit" %}
@@ -117,8 +109,7 @@
                       <i class="bi bi-trash-fill me-1"></i> {% trans "Delete" %}
                     </button>
                   </div>
-                  
-                  <!-- Мобильная версия: кнопки в ряд на всю ширину -->
+
                   <div class="d-flex d-lg-none w-100 mt-2 gap-2">
                     <a href="{% url 'task_edit' task.id %}" class="btn btn-warning flex-fill">
                       <i class="bi bi-pencil-fill me-1"></i> {% trans "Edit" %}

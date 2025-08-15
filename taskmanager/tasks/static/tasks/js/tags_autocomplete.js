@@ -1,9 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('tags-input');
-  if (!input) {
-    console.log('⚠️ Поле #tags-input не найдено');
-    return;
-  }
   const suggestionsBox = document.getElementById('tag-suggestions');
 
   input.addEventListener('input', async () => {
@@ -36,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Скрыть подсказки при клике вне
   document.addEventListener('click', (e) => {
     if (!suggestionsBox.contains(e.target) && e.target !== input) {
       suggestionsBox.innerHTML = '';

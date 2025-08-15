@@ -10,7 +10,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="icon" type="image/png" href="{% static 'tasks/img/favicon.png' %}">
-    <!-- Bootstrap 5 (через CDN) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
@@ -20,7 +19,6 @@
 <nav class="navbar navbar-dark bg-dark mb-4">
   <div class="container position-relative d-flex align-items-center">
 
-    <!-- Language switcher (левая колонка) - ПК версия -->
     <div class="col-auto d-none d-lg-block">
       <div class="dropdown">
         <button class="btn btn-secondary dropdown-toggle py-1" type="button" id="languageDropdown"
@@ -60,12 +58,10 @@
       </div>
     </div>
 
-    <!-- Логотип по центру на ПК -->
     <a href="{% url 'task_list' %}" class="position-absolute start-50 translate-middle-x d-none d-lg-flex align-items-center text-decoration-none">
       <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="40">
     </a>
 
-    <!-- Правая колонка: приветствие и выход - ПК версия -->
     <div class="col-auto ms-auto d-none d-lg-flex align-items-center gap-2">
       {% if user.is_authenticated %}
         <span class="text-white">{% trans "Hello" %}, {{ user.username }}</span>
@@ -83,21 +79,16 @@
 
   </div>
 
-<!-- Мобильная версия -->
 <div class="d-flex d-lg-none flex-column w-100 px-3 py-2">
 
-  <!-- Первый ряд: логотип слева, справа — переключатель языка и кнопка выхода -->
   <div class="d-flex justify-content-between align-items-center w-100">
 
-    <!-- Логотип слева -->
     <a href="{% url 'task_list' %}" class="d-flex align-items-center text-decoration-none">
       <img src="{% static 'tasks/img/logo.png' %}" alt="Taskino Logo" height="50">
     </a>
 
-    <!-- Язык + кнопка выхода -->
     <div class="d-flex align-items-center gap-2">
 
-      <!-- Language dropdown -->
       <div class="dropdown">
         <button class="btn btn-secondary btn-lg dropdown-toggle" type="button" id="languageDropdownMobile"
           data-bs-toggle="dropdown" aria-expanded="false" style="min-width: 60px;">
@@ -135,7 +126,6 @@
         </ul>
       </div>
 
-      <!-- Кнопка выхода только если пользователь аутентифицирован -->
       {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}" class="mb-0">
           {% csrf_token %}
@@ -155,7 +145,6 @@
 
     <div class="container">
 
-        <!-- Flash-сообщения -->
         {% if messages %}
           <div class="container mt-3">
             {% for message in messages %}
@@ -167,11 +156,9 @@
           </div>
         {% endif %}
 
-        <!-- Контент -->
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
     <script src="{% static 'tasks/js/auto_close_flash.js' %}"></script>
 
@@ -181,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   dropdownToggle.addEventListener('hidden.bs.dropdown', function () {
     setTimeout(() => {
-      dropdownToggle.blur();        // снимаем фокус с кнопки
+      dropdownToggle.blur();
     }, 0);
   });
 });
