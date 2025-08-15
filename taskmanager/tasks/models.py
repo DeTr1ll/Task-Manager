@@ -19,7 +19,7 @@ class Task(models.Model):
     status = models.CharField(
         max_length=50,
         choices=STATUS_CHOICES,
-        default=STATUS_PENDING
+        default=STATUS_PENDING,
     )
     due_date = models.DateField(null=True, blank=True)
     due_time = models.TimeField(null=True, blank=True)
@@ -29,18 +29,11 @@ class Task(models.Model):
     def __str__(self):
         return self.title
 
+
 class Tag(models.Model):
     name = models.CharField(max_length=50)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     tasks = models.ManyToManyField('Task', related_name='tags')
-    
+
     def __str__(self):
         return self.name
-
-class TelegramProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
-    chat_id = models.BigIntegerField(unique=True, null=True, blank=True)
-    temp_token = models.CharField(max_length=32, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.user.username if self.user else 'NoUser'} – {self.chat_id}"

@@ -1,24 +1,18 @@
 from datetime import timedelta
-from django.contrib.auth.forms import UserCreationForm
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
 from django.db.models import Q, Case, When, Value, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from django.views.decorators.http import require_POST
-from rest_framework import viewsets, permissions
 from django.utils.translation import gettext_lazy as _
-from django.http import JsonResponse, HttpResponseForbidden
-import json
-import requests
-from django.conf import settings
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.crypto import get_random_string
+from django.views.decorators.http import require_POST
+from rest_framework import permissions, viewsets
 
 from .forms import TaskForm
-from .models import Task, Tag, TelegramProfile
+from .models import Task, Tag
 from .serializers import TaskSerializer
 
 
@@ -42,6 +36,7 @@ def register(request):
             return redirect('login')
     else:
         form = UserCreationForm()
+
     return render(request, 'tasks/register.html', {'form': form})
 
 
@@ -66,7 +61,7 @@ def task_list(request):
         completed_order=Case(
             When(status='completed', then=Value(1)),
             default=Value(0),
-            output_field=IntegerField()
+            output_field=IntegerField(),
         )
     ).order_by('completed_order', 'due_date', '-created_at')
 
@@ -89,11 +84,15 @@ def task_list(request):
             task.card_highlight = ''
             task.due_highlight = 'text-muted'
 
-    return render(request, 'tasks/tasks.html', {
-        'tasks': task_list,
-        'status_filter': status_filter,
-        'query': query,
-    })
+    return render(
+        request,
+        'tasks/tasks.html',
+        {
+            'tasks': task_list,
+            'status_filter': status_filter,
+            'query': query,
+        },
+    )
 
 
 @login_required
@@ -103,19 +102,30 @@ def task_create(request):
         if form.is_valid():
             task = form.save(commit=False)
             task.user = request.user
-            tags = handle_tags_input(form.cleaned_data.get('tags_input', ''), request.user)
+            tags = handle_tags_input(
+                form.cleaned_data.get('tags_input', ''),
+                request.user,
+            )
             task.save()
             task.tags.set(tags)
             form.save_m2m()
-            messages.success(request, '<i class="bi bi-check2"></i> ' + _('Task successfully created.'))
+            messages.success(
+                request,
+                '<i class="bi bi-check2"></i> '
+                + _('Task successfully created.'),
+            )
             return redirect('task_list')
     else:
         form = TaskForm(user=request.user)
 
-    return render(request, 'tasks/task_form.html', {
-        'form': form,
-        'is_edit': False
-    })
+    return render(
+        request,
+        'tasks/task_form.html',
+        {
+            'form': form,
+            'is_edit': False,
+        },
+    )
 
 
 @login_required
@@ -133,12 +143,22 @@ def task_edit(request, id):
             tags = handle_tags_input(tags_input, request.user)
             task.tags.set(tags)
 
-            messages.info(request, '<i class="bi bi-pencil-fill"></i> ' + _('Task updated.'))
+            messages.info(
+                request,
+                '<i class="bi bi-pencil-fill"></i> ' + _('Task updated.'),
+            )
             return redirect('task_list')
     else:
         form = TaskForm(instance=task, user=request.user)
 
-    return render(request, 'tasks/task_form.html', {'form': form, 'is_edit': True})
+    return render(
+        request,
+        'tasks/task_form.html',
+        {
+            'form': form,
+            'is_edit': True,
+        },
+    )
 
 
 @login_required
@@ -149,11 +169,19 @@ def task_update_status_ajax(request, id):
 
     valid_statuses = ['pending', 'in_progress', 'completed']
     if new_status not in valid_statuses:
-        return JsonResponse({'success': False, 'error': _('Invalid status')}, status=400)
+        return JsonResponse(
+            {'success': False, 'error': _('Invalid status')},
+            status=400,
+        )
 
     task.status = new_status
     task.save()
-    return JsonResponse({'success': True, 'new_status_display': task.get_status_display()})
+    return JsonResponse(
+        {
+            'success': True,
+            'new_status_display': task.get_status_display(),
+        }
+    )
 
 
 @require_POST
@@ -161,7 +189,10 @@ def task_update_status_ajax(request, id):
 def task_delete(request, id):
     task = get_object_or_404(Task, id=id, user=request.user)
     task.delete()
-    messages.warning(request, '<i class="bi bi-trash-fill"></i> ' + _('Task deleted.') )
+    messages.warning(
+        request,
+        '<i class="bi bi-trash-fill"></i> ' + _('Task deleted.'),
+    )
     return redirect('task_list')
 
 
@@ -169,7 +200,7 @@ def handle_tags_input(tags_str, user):
     tag_names = [t.strip() for t in tags_str.split(',') if t.strip()]
     tags = []
     for name in tag_names:
-        tag, created = Tag.objects.get_or_create(name=name, user=user)
+        tag, _ = Tag.objects.get_or_create(name=name, user=user)
         tags.append(tag)
     return tags
 
@@ -181,149 +212,10 @@ def tag_autocomplete(request):
     tags = []
 
     if term and user:
-        tags = Tag.objects.filter(name__icontains=term, user=user).values_list('name', flat=True).distinct()
+        tags = (
+            Tag.objects.filter(name__icontains=term, user=user)
+            .values_list('name', flat=True)
+            .distinct()
+        )
 
     return JsonResponse(list(tags), safe=False)
-
-
-TELEGRAM_API = lambda token: f"https://api.telegram.org/bot{token}"
-
-def _send_message(token, chat_id, text, reply_markup=None):
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-    }
-    if reply_markup:
-        payload["reply_markup"] = json.dumps(reply_markup)
-    requests.post(url, json=payload)
-
-def _answer_callback(token, callback_query_id, text=None, show_alert=False):
-    payload = {"callback_query_id": callback_query_id, "show_alert": show_alert}
-    if text:
-        payload["text"] = text
-    try:
-        requests.post(f"{TELEGRAM_API(token)}/answerCallbackQuery", json=payload, timeout=10)
-    except Exception as e:
-        print("answer_callback error:", e)
-
-@csrf_exempt
-def telegram_webhook(request, token):
-    bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
-    if token != bot_token:
-        return HttpResponseForbidden("Invalid token")
-
-    if request.method != "POST":
-        return JsonResponse({"ok": True})
-
-    try:
-        update = json.loads(request.body)
-    except Exception:
-        return JsonResponse({"ok": False}, status=400)
-
-    # --- message (текстовые команды) ---
-    if "message" in update:
-        msg = update["message"]
-        chat = msg.get("chat", {})
-        chat_id = chat.get("id")
-        text = (msg.get("text") or "").strip()
-        if not chat_id:
-            return JsonResponse({"ok": True})
-
-        if text.startswith("/start"):
-            profile, _ = TelegramProfile.objects.get_or_create(chat_id=chat_id)
-            tmp_token = get_random_string(32)
-            profile.temp_token = tmp_token
-            profile.save()
-
-            if profile.user:
-                # уже привязан
-                keyboard = {
-                    "inline_keyboard": [
-                        [
-                            {"text": "❌ Отвязать", "callback_data": "unlink"},
-                            {"text": "🌐 Сменить язык", "callback_data": "change_lang"}
-                        ]
-                    ]
-                }
-                _send_message(bot_token, chat_id, "Вы уже привязаны. Выберите действие:", reply_markup=keyboard)
-            else:
-                # не привязан
-                frontend = getattr(settings, "FRONTEND_URL", "")
-                link = f"{frontend}/telegram/confirm?token={tmp_token}&chat_id={chat_id}"
-                keyboard = {
-                    "inline_keyboard": [
-                        [{"text": "🔗 Привязать Telegram", "url": link}],
-                        [{"text": "🌐 Сменить язык", "callback_data": "change_lang"}]
-                    ]
-                }
-                _send_message(bot_token, chat_id, "Привет! Нажмите, чтобы привязать аккаунт:", reply_markup=keyboard)
-
-        return JsonResponse({"ok": True})
-
-    # --- callback_query (нажатия inline-кнопок) ---
-    if "callback_query" in update:
-        cq = update["callback_query"]
-        data = cq.get("data", "")
-        callback_id = cq.get("id")
-        message = cq.get("message") or {}
-        chat = message.get("chat") or {}
-        chat_id = chat.get("id")
-        if not chat_id:
-            return JsonResponse({"ok": True})
-
-        if data == "unlink":
-            TelegramProfile.objects.filter(chat_id=chat_id).update(user=None, temp_token=None)
-            _send_message(bot_token, chat_id, "✅ Telegram аккаунт отвязан.")
-        elif data == "change_lang":
-            keyboard = {
-                "inline_keyboard": [
-                    [{"text": "🇬🇧 English", "callback_data": "lang:en"}],
-                    [{"text": "🇺🇦 Українська", "callback_data": "lang:uk"}],
-                    [{"text": "🇷🇺 Русский", "callback_data": "lang:ru"}],
-                ]
-            }
-            _send_message(bot_token, chat_id, "Выберите язык:", reply_markup=keyboard)
-        elif data.startswith("lang:"):
-            lang = data.split(":", 1)[1]
-            _send_message(bot_token, chat_id, f"Язык установлен: {lang}. Откройте сайт и проверьте.")
-        else:
-            _send_message(bot_token, chat_id, "Неизвестная команда")
-
-        return JsonResponse({"ok": True})
-
-    return JsonResponse({"ok": True})
-
-@csrf_exempt
-def confirm_telegram(request):
-    """
-    Ссылка, на которую ведёт кнопка «Привязать» в боте.
-    Если пользователь не залогинен — редиректим на логин и сохраняем токен в сессии.
-    После логина пользователь может вернуться на этот URL и мы привяжем аккаунт.
-    """
-    token = request.GET.get("token")
-    chat_id = request.GET.get("chat_id")
-    if not token or not chat_id:
-        messages.error(request, "Invalid link")
-        return redirect("/")
-
-    try:
-        profile = TelegramProfile.objects.get(temp_token=token, chat_id=chat_id)
-    except TelegramProfile.DoesNotExist:
-        messages.error(request, "Invalid or expired token")
-        return redirect("/")
-
-    if not request.user.is_authenticated:
-        # сохраним данные в сессии и редирект на логин (next оставим на тот же URL)
-        request.session['tg_confirm_token'] = token
-        request.session['tg_confirm_chat'] = chat_id
-        return redirect(f"{settings.LOGIN_URL}?next={request.get_full_path()}")
-
-    # Если пользователь залогинен — связываем профиль
-    # Удаляем связь того же chat_id у других записей (на всякий случай)
-    TelegramProfile.objects.filter(chat_id=chat_id).exclude(pk=profile.pk).update(user=None)
-    profile.user = request.user
-    profile.temp_token = None
-    profile.save()
-    messages.success(request, "✅ Telegram successfully linked!")
-    return redirect("/")

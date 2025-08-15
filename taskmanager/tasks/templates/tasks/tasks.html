@@ -146,13 +146,6 @@
     {% endif %}
 </div>
 
-{% if not user.telegramprofile.chat_id %}
-<div class="alert alert-info">
-  {% trans "Want to receive notifications in Telegram?" %} 
-  <a href="https://t.me/TaskinoTaskmanager_bot" target="_blank">{% trans "Link your account" %}</a>
-</div>
-{% endif %}
-
 <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -179,7 +172,7 @@
   }
 
   .collapse-description.expanded {
-    max-height: 300px; /* adjust as needed */
+    max-height: 300px;
   }
 </style>
 {% endblock %}
