@@ -58,7 +58,7 @@ It allows users to create, manage, and organize their tasks with tags, deadlines
 
 1. Clone the repository:
   ```
-  https://github.com/DeTr1ll/Task-Manager.git
+  git clone https://github.com/DeTr1ll/Task-Manager.git
   cd taskmanager
   ```
 2.  Create and activate a virtual environment:
