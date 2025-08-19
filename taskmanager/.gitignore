@@ -1,15 +1,15 @@
 # Virtual Environment
 .env
-/venv/*
-
-# Static files
-/staticfiles/*
+venv/
 
 # Python
 __pycache__/
+*.pyc
 
-# Django stuff
+# Django
 db.sqlite3
 *.log
 *.pot
-*.pyc
+
+# Static files (collected)
+staticfiles/
