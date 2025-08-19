@@ -57,10 +57,10 @@ It allows users to create, manage, and organize their tasks with tags, deadlines
 ## Installation
 
 1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/taskmanager.git
-   cd taskmanager
-   ```
+  ```
+  git clone https://github.com/yourusername/taskmanager.git
+  cd taskmanager
+  ```
 2.  Create and activate a virtual environment:
   ```
   python -m venv venv
